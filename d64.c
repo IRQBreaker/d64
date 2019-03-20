@@ -238,13 +238,13 @@ int main(int argc, char **argv)
 
   int fd = open(argv[1], O_RDONLY);
   if (fd < 0) {
-    fprintf(stderr, "Error: %s\n", strerror(errno));
+    perror("Error");
     return EXIT_FAILURE;
   }
 
   struct stat st;
   if (fstat(fd, &st) < 0) {
-    fprintf(stderr, "Error: %s\n", strerror(errno));
+    perror("Error");
     close(fd);
     return EXIT_FAILURE;
   }
@@ -257,7 +257,7 @@ int main(int argc, char **argv)
 
   char *buffer = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
   if (buffer == MAP_FAILED) {
-    fprintf(stderr, "Error: %s\n", strerror(errno));
+    perror("Error");
     close(fd);
     return EXIT_FAILURE;
   }

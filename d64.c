@@ -35,7 +35,6 @@
 #define FILENAME_LENGTH           16
 #define GEOS_INFO_LENGTH          6
 
-#define CHECKBIT(ADDRESS,BIT) (ADDRESS & (1<<BIT))
 #define PACKED __attribute__ ((__packed__))
 
 typedef struct

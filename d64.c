@@ -76,9 +76,10 @@ typedef struct
 
 typedef struct
 {
-  dir_entry sector[NO_OF_DIRENTRY_PER_SECTOR];
+  dir_entry dentry[NO_OF_DIRENTRY_PER_SECTOR];
 } PACKED dir_sector;
 
+// Stolen from "petcom version 1.00 by Craig Bruce, 18-May-1995"
 unsigned char pet_asc[256] = {
   0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x14,0x09,0x0d,0x11,0x93,0x0a,0x0e,0x0f,
   0x10,0x0b,0x12,0x13,0x08,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
@@ -123,11 +124,11 @@ int file_size(dir_entry *de)
 
 int next_dir_ts(dir_sector *ds, track_sector *ts)
 {
-  if (ds->sector[0].next_dir_entry.track == 0)
+  if (ds->dentry[0].next_dir_entry.track == 0)
     return 0;
 
-  ts->track = ds->sector[0].next_dir_entry.track;
-  ts->sector = ds->sector[0].next_dir_entry.sector;
+  ts->track = ds->dentry[0].next_dir_entry.track;
+  ts->sector = ds->dentry[0].next_dir_entry.sector;
 
   return 1;
 }
@@ -179,7 +180,7 @@ void showdisk(char *buffer)
   int valid = 1;
   while (valid) {
     for (int i=0; i < NO_OF_DIRENTRY_PER_SECTOR; i++) {
-      dir_entry *de = (dir_entry*)(&ds->sector[i]);
+      dir_entry *de = (dir_entry*)(&ds->dentry[i]);
 
       if (de->filetype) {
         for (int j=0; j < FILENAME_LENGTH; j++) {
@@ -196,7 +197,6 @@ void showdisk(char *buffer)
         char *filetype = file_type[ftype];
 
         printf("  %-3s (0x%02X), %3d sectors, %6d bytes",
-            //file_type(de->filetype), de->filetype,
             filetype, de->filetype,
             file_sector_size(de),
             file_size(de));

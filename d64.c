@@ -62,7 +62,7 @@ typedef struct
 
 typedef struct
 {
-  track_sector next_de;
+  track_sector next_dir_entry;
   uint8_t filetype;
   uint8_t filetrack;
   uint8_t filesector;
@@ -98,20 +98,17 @@ unsigned char pet_asc[256] = {
   0xb0,0xb1,0xb2,0xb3,0xb4,0xb5,0xb6,0xb7,0xb8,0xb9,0xba,0xbb,0xbc,0xbd,0xbe,0xbf
 };
 
+int sector_start[] = {
+  0, 21, 42, 63, 84, 105, 126, 147, 168, 189, 210, 231, 252, 273, 294,
+  315, 336, 357, 376, 395, 414, 433, 452, 471, 490, 508, 526, 544, 562,
+  580, 598, 615, 632, 649, 666, 683, 700, 717, 734, 751
+};
+
+char *file_type[] = {"DEL", "SEQ", "PRG", "USR", "REL", "???"};
+
 int memory_offset(track_sector *ts)
 {
-  int offset = -1;
-
-  if (ts->track >= 1 && ts->track <=17)
-    offset = ts->sector * 256;
-  else if (ts->track >= 18 && ts->track <= 24)
-    offset = (ts->sector * 256) + ((17 * 21) * 256);
-  else if (ts->track >= 25 && ts->track <=30)
-    offset = (ts->sector * 256) + ((7 * 19) * 256);
-  else if (ts->track >= 31 && ts->track <=35)
-    offset = (ts->sector * 256) + ((6 * 18) * 256);
-
-  return offset;
+  return (ts->sector + sector_start[ts->track - 1]) * 256;
 }
 
 int file_sector_size(dir_entry *de)
@@ -126,31 +123,13 @@ int file_size(dir_entry *de)
 
 int next_dir_ts(dir_sector *ds, track_sector *ts)
 {
-  if (ds->sector[0].next_de.track == 0)
+  if (ds->sector[0].next_dir_entry.track == 0)
     return 0;
 
-  ts->track = ds->sector[0].next_de.track;
-  ts->sector = ds->sector[0].next_de.sector;
+  ts->track = ds->sector[0].next_dir_entry.track;
+  ts->sector = ds->sector[0].next_dir_entry.sector;
 
   return 1;
-}
-
-char* file_type(int filetype)
-{
-  switch (filetype & ((1 << 3) - 1)) {
-    case FILETYPE_DEL:
-      return "DEL";
-    case FILETYPE_SEQ:
-      return "SEQ";
-    case FILETYPE_PRG:
-      return "PRG";
-    case FILETYPE_USR:
-      return "USR";
-    case FILETYPE_REL:
-      return "REL";
-    default:
-      return "???";
-  }
 }
 
 int validate_disk(int filesize)
@@ -210,8 +189,15 @@ void showdisk(char *buffer)
             printf(" ");
         }
 
+        int ftype = de->filetype & ((1 << 3) - 1);
+        if (ftype > 4)
+          ftype = sizeof(file_type) - 1;
+
+        char *filetype = file_type[ftype];
+
         printf("  %-3s (0x%02X), %3d sectors, %6d bytes",
-            file_type(de->filetype), de->filetype,
+            //file_type(de->filetype), de->filetype,
+            filetype, de->filetype,
             file_sector_size(de),
             file_size(de));
         printf(" (%02d,%02d)\n", de->filetrack, de->filesector);

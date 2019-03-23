@@ -10,6 +10,9 @@ main.o: d64.h disasm.h
 d64.o: d64.h
 disasm.o: disasm.h
 
-.PHONY: clean
+.PHONY: clean mrproper
 clean:
 	rm -f d64 $(objects)
+
+mrproper:
+	git clean -dxf

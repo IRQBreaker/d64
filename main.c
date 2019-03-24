@@ -4,11 +4,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <errno.h>
+
+typedef enum {BIN, D64} filetype;
+
+filetype get_filetype(char *buffer, char *filename, int size)
+{
+    int length = strlen(filename);
+
+    if (length < 4)
+        return BIN;
+
+    if ((!strncmp(&filename[length - 3], "d64", 3) ||
+            !strncmp(&filename[length - 3], "D64", 3)) &&
+            validate_disk(size))
+        return D64;
+
+    return BIN;
+}
 
 int main(int argc, char **argv)
 {
@@ -30,14 +48,6 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-#if 0
-    if (!validate_disk(st.st_size)) {
-        fprintf(stderr, "Not a valid D64 file\n");
-        close(fd);
-        return EXIT_FAILURE;
-    }
-#endif
-
     char *buffer = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (buffer == MAP_FAILED) {
         perror("Error");
@@ -45,8 +55,16 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    //showdisk(buffer);
-    disasm(buffer, st.st_size, 0);
+    switch (get_filetype(buffer, argv[1], st.st_size)) {
+        case D64:
+            showdisk(buffer);
+            break;
+
+        case BIN:
+        default:
+            disasm(buffer, st.st_size, 0);
+            break;
+    }
 
     munmap(buffer, st.st_size);
     close(fd);

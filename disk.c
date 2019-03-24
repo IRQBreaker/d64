@@ -1,4 +1,4 @@
-#include "d64.h"
+#include "disk.h"
 
 #include <stdio.h>
 #include <stdint.h>

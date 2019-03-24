@@ -15,6 +15,8 @@ typedef enum {BIN, D64} filetype;
 
 filetype get_filetype(char *buffer, char *filename, int size)
 {
+    (void)buffer; // To be used at a later stage
+
     int length = strlen(filename);
 
     if (length < 4)

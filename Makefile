@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -pedantic --std=c99 -O2 -s
+CFLAGS = -Wall -Wextra -Werror -pedantic --std=c99 -O2 -s
 PRG = d64
 
 objects = main.o disk.o disasm.o

@@ -1,16 +1,21 @@
 #include "disasm.h"
 
+#include <stdio.h>
+#include <stdint.h>
+
 /* Addressing modes */
 enum { IMPLIED, IMMEDIATE, ABSOLUTE, ABSOLUTE_X, ABSOLUTE_Y, ZEROPAGE,
     INDIRECT_X, INDIRECT_Y, ZEROPAGE_X, INDIRECT, ZEROPAGE_Y, RELATIVE };
 
-/* "Name", size in bytes, type */
-struct {
+typedef struct
+{
     char *mnemonic;
     int size;
     int type;
-} mnemonics[] = {
-    // Legal opcodes 0 - 255
+} mnemonics;
+
+/* name, size in bytes, type */
+mnemonics mne_legal[] = {
     {"BRK", 1, IMPLIED},    {"ORA", 2, INDIRECT_X}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
     {"???", 1, IMPLIED},    {"ORA", 2, ZEROPAGE},   {"ASL", 2, ZEROPAGE},   {"???", 1, IMPLIED},
     {"PHP", 1, IMPLIED},    {"ORA", 2, IMMEDIATE},  {"ASL", 1, IMPLIED},    {"???", 1, IMPLIED},
@@ -74,9 +79,11 @@ struct {
     {"BEQ", 2, RELATIVE},   {"SBC", 2, INDIRECT_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
     {"???", 1, IMPLIED},    {"SBC", 2, ZEROPAGE_X}, {"INC", 2, ZEROPAGE_X}, {"???", 1, IMPLIED},
     {"SED", 1, IMPLIED},    {"SBC", 3, ABSOLUTE_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"SBC", 3, ABSOLUTE_X}, {"INC", 3, ABSOLUTE_X}, {"???", 1, IMPLIED},
+    {"???", 1, IMPLIED},    {"SBC", 3, ABSOLUTE_X}, {"INC", 3, ABSOLUTE_X}, {"???", 1, IMPLIED}
+};
 
-    // Illegal opcodes 256 - 511
+/* name, size in bytes, type */
+mnemonics mne_illegal[] = {
     {"BRK", 1, IMPLIED},    {"ORA", 2, INDIRECT_X}, {"KIL", 1, IMPLIED},    {"SLO", 2, INDIRECT_X},
     {"NOP", 2, ZEROPAGE},   {"ORA", 2, ZEROPAGE},   {"ASL", 2, ZEROPAGE},   {"SLO", 2, ZEROPAGE},
     {"PHP", 1, IMPLIED},    {"ORA", 2, IMMEDIATE},  {"ASL", 2, IMPLIED},    {"ANC", 2, IMMEDIATE},
@@ -143,10 +150,88 @@ struct {
     {"NOP", 3, ABSOLUTE_X}, {"SBC", 3, ABSOLUTE_X}, {"INC", 3, ABSOLUTE_X}, {"ISC", 3, ABSOLUTE_X}
 };
 
-void disasm(char *buffer, int size)
+void disasm(char *buffer, int size, int illegal)
 {
-    (void)buffer;
-    (void)size;
+    mnemonics *mne = illegal ? (mnemonics*)&mne_illegal : (mnemonics*)&mne_legal;
+
+    // Get loading address and advance index
+    uint16_t address = buffer[0] + ((buffer[1] & 0xff) << 8);
+    int index = 2;
+
+    while (index < size) {
+        uint8_t low = 0;
+        uint8_t high = 0;
+        uint8_t opcode = buffer[index++];
+
+        // address
+        printf("%04X ", address);
+
+        // hexdump
+        switch (mne[opcode].size) {
+            case 2:
+                low = buffer[index++];
+                address += mne[opcode].size;
+                printf("%02X %02X     ", opcode, low);
+                break;
+
+            case 3:
+                low = buffer[index++];
+                high = buffer[index++];
+                address += mne[opcode].size;
+                printf("%02X %02X %02X  ", opcode, low, high);
+                break;
+
+            default:
+                address++;
+                printf("%02X        ", opcode);
+                break;
+        }
+
+        // mnemonic
+        printf("%s ", mne[opcode].mnemonic);
+
+        // Type
+        switch (mne[opcode].type) {
+            case IMMEDIATE:
+                printf("#$%02X", low);
+                break;
+            case ABSOLUTE:
+                printf("$%02X%02X", high, low);
+                break;
+            case ABSOLUTE_X:
+                printf("$%02X%02X,X", high, low);
+                break;
+            case ABSOLUTE_Y:
+                printf("$%02X%02X,Y", high, low);
+                break;
+            case ZEROPAGE:
+                printf("$%02X", low);
+                break;
+            case INDIRECT_X:
+                printf("($%02X,X)", low);
+                break;
+            case INDIRECT_Y:
+                printf("($%02X),Y", low);
+                break;
+            case ZEROPAGE_X:
+                printf("$%02X,X", low);
+                break;
+            case INDIRECT:
+                printf("($%02X%02X)", high, low);
+                break;
+            case ZEROPAGE_Y:
+                printf("$%02X,Y", low);
+                break;
+            case RELATIVE:
+                printf("$%04X", (low <= 127) ? address + low : address - (256 - low));
+                break;
+            default:
+                /* IMPLIED */
+                break;
+        }
+
+        printf("\n");
+    }
 
     return;
 }

@@ -30,11 +30,13 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
+#if 0
     if (!validate_disk(st.st_size)) {
         fprintf(stderr, "Not a valid D64 file\n");
         close(fd);
         return EXIT_FAILURE;
     }
+#endif
 
     char *buffer = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (buffer == MAP_FAILED) {
@@ -43,8 +45,8 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    showdisk(buffer);
-    disasm(buffer, st.st_size);
+    //showdisk(buffer);
+    disasm(buffer, st.st_size, 0);
 
     munmap(buffer, st.st_size);
     close(fd);

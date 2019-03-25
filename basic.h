@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-void showbasic(uint8_t *buffer, int size);
+void showbasic(const uint8_t *buffer, const int size);
 
 #endif // BASIC_H_

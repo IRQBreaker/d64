@@ -33,7 +33,7 @@ const char *basic[] = {
     "left$",   "right$", "mid$",   "unknown"
 };
 
-void showbasic(uint8_t *buffer, int size)
+void showbasic(const uint8_t *buffer, const int size)
 {
     // Get loading address and advance index
     uint16_t address = buffer[0] + ((buffer[1] & 0xff) << 8);

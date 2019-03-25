@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-int validate_disk(int filesize);
-void showdisk(uint8_t *buffer);
+void showdisk(const uint8_t *buffer, const int size);
 
 #endif // D64_H_

@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-void disasm(uint8_t *buffer, int size, int illegal);
+void disasm(const uint8_t *buffer, const int size, const int illegal);
 
 #endif // DISASM_H_

@@ -73,30 +73,30 @@ typedef struct
     dir_entry dentry[NO_OF_DIRENTRY_PER_SECTOR];
 } PACKED dir_sector;
 
-int sector_start[] = {
+const int sector_start[] = {
     0, 21, 42, 63, 84, 105, 126, 147, 168, 189, 210, 231, 252, 273, 294,
     315, 336, 357, 376, 395, 414, 433, 452, 471, 490, 508, 526, 544, 562,
     580, 598, 615, 632, 649, 666, 683, 700, 717, 734, 751
 };
 
-char *file_type[] = {"del", "seq", "prg", "usr", "rel", "???"};
+const char *file_type[] = {"del", "seq", "prg", "usr", "rel", "???"};
 
-static int memory_offset(track_sector *ts)
+static int memory_offset(const track_sector *ts)
 {
     return (ts->sector + sector_start[ts->track - 1]) * 256;
 }
 
-static int file_sector_size(dir_entry *de)
+static int file_sector_size(const dir_entry *de)
 {
     return de->fs_sizel + (de->fs_sizeh * 256);
 }
 
-static int file_size(dir_entry *de)
+static int file_size(const dir_entry *de)
 {
     return file_sector_size(de) * 254;
 }
 
-static int next_dir_ts(dir_sector *ds, track_sector *ts)
+static int next_dir_ts(const dir_sector *ds, track_sector *ts)
 {
     if (ds->dentry[0].next_dir_entry.track == 0)
         return 0;
@@ -107,7 +107,7 @@ static int next_dir_ts(dir_sector *ds, track_sector *ts)
     return 1;
 }
 
-int validate_disk(int filesize)
+static int validate_disk(const int filesize)
 {
     if (filesize != SIZE_35_TRACK && filesize != SIZE_35_TRACK_ERROR &&
             filesize != SIZE_40_TRACK && filesize != SIZE_40_TRACK_ERROR)
@@ -116,8 +116,13 @@ int validate_disk(int filesize)
     return 1;
 }
 
-void showdisk(uint8_t *buffer)
+void showdisk(const uint8_t *buffer, const int size)
 {
+    if (!validate_disk(size)) {
+        fprintf(stderr, "Not a valid D64 disk image\n");
+        return;
+    }
+
     track_sector ts = {.track = 18, .sector = 0};
     int offset = memory_offset(&ts);
 
@@ -160,7 +165,7 @@ void showdisk(uint8_t *buffer)
                 if (ftype > 4)
                     ftype = (sizeof(file_type) / sizeof(file_type[0])) - 1;
 
-                char *filetype = file_type[ftype];
+                const char *filetype = file_type[ftype];
 
                 printf("  %-3s (0x%02X), %3d sectors, %6d bytes",
                         filetype, de->filetype, file_sector_size(de), file_size(de));

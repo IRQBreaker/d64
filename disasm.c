@@ -19,7 +19,7 @@ enum {
 };
 
 // Length of addressing modes
-int op_length[] = {1, 2, 3, 3, 3, 2, 2, 2, 2, 2, 3, 2};
+const int op_length[] = {1, 2, 3, 3, 3, 2, 2, 2, 2, 2, 3, 2};
 
 typedef struct
 {
@@ -28,7 +28,7 @@ typedef struct
 } mnemonics;
 
 /* name, type */
-mnemonics mne_legal[] = {
+const mnemonics mne_legal[] = {
     {"BRK", IMPLIED},    {"ORA", INDIRECT_X}, {"???", IMPLIED},    {"???", IMPLIED},
     {"???", IMPLIED},    {"ORA", ZEROPAGE},   {"ASL", ZEROPAGE},   {"???", IMPLIED},
     {"PHP", IMPLIED},    {"ORA", IMMEDIATE},  {"ASL", IMPLIED},    {"???", IMPLIED},
@@ -96,7 +96,7 @@ mnemonics mne_legal[] = {
 };
 
 /* name, type */
-mnemonics mne_illegal[] = {
+const mnemonics mne_illegal[] = {
     {"BRK", IMPLIED},    {"ORA", INDIRECT_X}, {"KIL", IMPLIED},    {"SLO", INDIRECT_X},
     {"NOP", ZEROPAGE},   {"ORA", ZEROPAGE},   {"ASL", ZEROPAGE},   {"SLO", ZEROPAGE},
     {"PHP", IMPLIED},    {"ORA", IMMEDIATE},  {"ASL", IMPLIED},    {"ANC", IMMEDIATE},
@@ -163,7 +163,7 @@ mnemonics mne_illegal[] = {
     {"NOP", ABSOLUTE_X}, {"SBC", ABSOLUTE_X}, {"INC", ABSOLUTE_X}, {"ISC", ABSOLUTE_X}
 };
 
-void disasm(uint8_t *buffer, int size, int illegal)
+void disasm(const uint8_t *buffer, const int size, const int illegal)
 {
     mnemonics *mne = illegal ? (mnemonics*)&mne_illegal : (mnemonics*)&mne_legal;
 

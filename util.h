@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-extern uint8_t pet_asc[];
+extern const uint8_t pet_asc[];
 
 #endif // UTIL_H_

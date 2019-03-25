@@ -13,7 +13,7 @@ disasm.o: disasm.h
 basic.o: basic.h util.h
 util.o: util.h
 
-.PHONY: clean mrproper cppcheck
+.PHONY: clean mrproper cppcheck gtags
 clean:
 	rm -f $(prg) $(objects)
 
@@ -22,3 +22,6 @@ mrproper:
 
 cppcheck:
 	cppcheck --enable=all --language=c --std=c99 --suppress=missingInclude *.c
+
+gtags:
+	git ls-files | gtags -f -

@@ -12,12 +12,10 @@
 #include <fcntl.h>
 #include <errno.h>
 
-typedef enum {BIN, D64} filetype;
+typedef enum {BIN, D64, B64, B128} filetype;
 
 filetype get_filetype(uint8_t *buffer, char *filename, int size)
 {
-    (void)buffer; // To be used at a later stage
-
     int length = strlen(filename);
 
     if (length < 4)
@@ -27,6 +25,14 @@ filetype get_filetype(uint8_t *buffer, char *filename, int size)
             !strncmp(&filename[length - 3], "D64", 3)) &&
             validate_disk(size))
         return D64;
+
+    // C64 basic
+    if (buffer[0] == 0x01 && buffer[1] == 0x08)
+      return B64;
+
+    // C128 basic
+    if (buffer[0] == 0x01 && buffer[1] == 0x1c)
+      return B128;
 
     return BIN;
 }

@@ -1,5 +1,6 @@
 #include "disk.h"
 #include "disasm.h"
+#include "basic.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,7 +13,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-typedef enum {BIN, D64, B64, B128} filetype;
+typedef enum {BIN, D64, BAS} filetype;
 
 filetype get_filetype(uint8_t *buffer, char *filename, int size)
 {
@@ -28,11 +29,7 @@ filetype get_filetype(uint8_t *buffer, char *filename, int size)
 
     // C64 basic
     if (buffer[0] == 0x01 && buffer[1] == 0x08)
-      return B64;
-
-    // C128 basic
-    if (buffer[0] == 0x01 && buffer[1] == 0x1c)
-      return B128;
+      return BAS;
 
     return BIN;
 }
@@ -67,6 +64,10 @@ int main(int argc, char **argv)
     switch (get_filetype(buffer, argv[1], st.st_size)) {
         case D64:
             showdisk(buffer);
+            break;
+
+        case BAS:
+            showbasic(buffer, st.st_size);
             break;
 
         case BIN:

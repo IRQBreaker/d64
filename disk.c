@@ -1,4 +1,5 @@
 #include "disk.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <ctype.h>
@@ -78,7 +79,7 @@ int sector_start[] = {
     580, 598, 615, 632, 649, 666, 683, 700, 717, 734, 751
 };
 
-char *file_type[] = {"DEL", "SEQ", "PRG", "USR", "REL", "???"};
+char *file_type[] = {"del", "seq", "prg", "usr", "rel", "???"};
 
 static int memory_offset(track_sector *ts)
 {
@@ -106,50 +107,6 @@ static int next_dir_ts(dir_sector *ds, track_sector *ts)
     return 1;
 }
 
-static unsigned char simple_petscii(unsigned char c)
-{
-    switch(c) {
-        case 0xab:
-        case 0xad:
-        case 0xae:
-        case 0xb0:
-        case 0xb1:
-        case 0xb2:
-        case 0xb3:
-        case 0xbd:
-        case 0xc5:
-        case 0xc9:
-        case 0xca:
-        case 0xcb:
-        case 0xd2:
-        case 0xd5:
-        case 0xdb:
-        case 0xed:
-        case 0xee:
-        case 0xf0:
-        case 0xfd:
-            return '+';
-
-        case 0xc0:
-        case 0xc3:
-        case 0xc4:
-        case 0xc6:
-            return '-';
-
-        case 0xc2:
-        case 0xc7:
-        case 0xc8:
-        case 0xdd:
-            return '|';
-
-        case 0xa0:
-            return ' ';
-
-        default:
-            return (isprint(c) ? c : '@');
-    }
-}
-
 int validate_disk(int filesize)
 {
     if (filesize != SIZE_35_TRACK && filesize != SIZE_35_TRACK_ERROR &&
@@ -173,12 +130,14 @@ void showdisk(uint8_t *buffer)
     // Disk name
     printf("\"");
     for (int i=0; i < BAM_DISKNAME_LENGTH; i++)
-        printf( "%c", simple_petscii(bam->diskname[i]));
+        printf( "%c", isprint(pet_asc[bam->diskname[i]]) ?
+            pet_asc[bam->diskname[i]] : ' ');
     printf("\"");
 
     // Disk id
     for (int i=0; i < BAM_DISKINFO_LENGTH; i++)
-        printf( "%c", simple_petscii(bam->diskinfo[i]));
+        printf( "%c", isprint(pet_asc[bam->diskinfo[i]]) ?
+            pet_asc[bam->diskinfo[i]] : ' ');
     printf("\n");
 
     // Files
@@ -193,7 +152,8 @@ void showdisk(uint8_t *buffer)
 
             if (de->filetype) {
                 for (int j=0; j < FILENAME_LENGTH; j++)
-                    printf( "%c", simple_petscii(de->filename[j]));
+                    printf( "%c", isprint(pet_asc[de->filename[j]]) ?
+                        pet_asc[de->filename[j]] : ' ');
 
                 // Actual filetype is the last three bits
                 int ftype = de->filetype & ((1 << 3) - 1);

@@ -8,7 +8,7 @@ $(PRG): $(objects)
 	$(CC) $(CFLAGS) -o $(PRG) $(objects)
 
 main.o: disk.h disasm.h basic.h util.h
-disk.o: disk.h
+disk.o: disk.h util.h
 disasm.o: disasm.h
 basic.o: basic.h util.h
 util.o: util.h

@@ -4,150 +4,164 @@
 #include <stdint.h>
 
 /* Addressing modes */
-enum { IMPLIED, IMMEDIATE, ABSOLUTE, ABSOLUTE_X, ABSOLUTE_Y, ZEROPAGE,
-    INDIRECT_X, INDIRECT_Y, ZEROPAGE_X, INDIRECT, ZEROPAGE_Y, RELATIVE };
+enum {
+    IMPLIED,      // RTS
+    IMMEDIATE,    // LDA #$00
+    ABSOLUTE,     // JMP $C000
+    ABSOLUTE_X,   // LDY $8000,X
+    ABSOLUTE_Y,   // LDX $9000,Y
+    ZEROPAGE,     // LDA $80
+    INDIRECT_X,   // STA $(02,X)
+    INDIRECT_Y,   // STA $(40),Y
+    ZEROPAGE_X,   // LDA $20,X
+    INDIRECT,     // JMP ($8000)
+    ZEROPAGE_Y,   // LDA $30,Y
+    RELATIVE      // BNE $9000
+};
+
+// Length of addressing modes
+int op_length[] = {1, 2, 3, 3, 3, 2, 2, 2, 2, 3, 2, 2};
 
 typedef struct
 {
     char *mnemonic;
-    int size;
     int type;
 } mnemonics;
 
-/* name, size in bytes, type */
+/* name, type */
 mnemonics mne_legal[] = {
-    {"BRK", 1, IMPLIED},    {"ORA", 2, INDIRECT_X}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"ORA", 2, ZEROPAGE},   {"ASL", 2, ZEROPAGE},   {"???", 1, IMPLIED},
-    {"PHP", 1, IMPLIED},    {"ORA", 2, IMMEDIATE},  {"ASL", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"ORA", 3, ABSOLUTE},   {"ASL", 3, ABSOLUTE},   {"???", 1, IMPLIED},
-    {"BPL", 2, RELATIVE},   {"ORA", 2, INDIRECT_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"ORA", 2, ZEROPAGE_X}, {"ASL", 2, ZEROPAGE_X}, {"???", 1, IMPLIED},
-    {"CLC", 1, IMPLIED},    {"ORA", 3, ABSOLUTE_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"ORA", 3, ABSOLUTE_X}, {"ASL", 3, ABSOLUTE_X}, {"???", 1, IMPLIED},
-    {"JSR", 3, ABSOLUTE},   {"AND", 2, INDIRECT_X}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"BIT", 2, ZEROPAGE},   {"AND", 2, ZEROPAGE},   {"ROL", 2, ZEROPAGE},   {"???", 1, IMPLIED},
-    {"PLP", 1, IMPLIED},    {"AND", 2, IMMEDIATE},  {"ROL", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"BIT", 3, ABSOLUTE},   {"AND", 3, ABSOLUTE},   {"ROL", 3, ABSOLUTE},   {"???", 1, IMPLIED},
-    {"BMI", 2, RELATIVE},   {"AND", 2, INDIRECT_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"AND", 2, ZEROPAGE_X}, {"ROL", 2, ZEROPAGE_X}, {"???", 1, IMPLIED},
-    {"SEC", 1, IMPLIED},    {"AND", 3, ABSOLUTE_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"AND", 3, ABSOLUTE_X}, {"ROL", 3, ABSOLUTE_X}, {"???", 1, IMPLIED},
-    {"RTI", 1, IMPLIED},    {"EOR", 2, INDIRECT_X}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"EOR", 2, ZEROPAGE},   {"LSR", 2, ZEROPAGE},   {"???", 1, IMPLIED},
-    {"PHA", 1, IMPLIED},    {"EOR", 2, IMMEDIATE},  {"LSR", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"JMP", 3, ABSOLUTE},   {"EOR", 3, ABSOLUTE},   {"LSR", 3, ABSOLUTE},   {"???", 1, IMPLIED},
-    {"BVC", 2, RELATIVE},   {"EOR", 2, INDIRECT_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"EOR", 2, ZEROPAGE_X}, {"LSR", 2, ZEROPAGE_X}, {"???", 1, IMPLIED},
-    {"CLI", 1, IMPLIED},    {"EOR", 3, ABSOLUTE_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"EOR", 3, ABSOLUTE_X}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"RTS", 1, IMPLIED},    {"ADC", 2, INDIRECT_X}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"ADC", 2, ZEROPAGE},   {"ROR", 2, ZEROPAGE},   {"???", 1, IMPLIED},
-    {"PLA", 1, IMPLIED},    {"ADC", 2, IMMEDIATE},  {"ROR", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"JMP", 3, INDIRECT},   {"ADC", 3, ABSOLUTE},   {"ROR", 3, ABSOLUTE},   {"???", 1, IMPLIED},
-    {"BVS", 2, RELATIVE},   {"ADC", 2, INDIRECT_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"ADC", 2, ZEROPAGE_X}, {"ROR", 2, ZEROPAGE_X}, {"???", 1, IMPLIED},
-    {"SEI", 1, IMPLIED},    {"ADC", 3, ABSOLUTE_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"ADC", 3, ABSOLUTE_X}, {"ROR", 3, ABSOLUTE_X}, {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"STA", 2, INDIRECT_X}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"STY", 2, ZEROPAGE},   {"STA", 2, ZEROPAGE},   {"STX", 2, ZEROPAGE},   {"???", 1, IMPLIED},
-    {"DEY", 1, IMPLIED},    {"???", 1, IMPLIED},    {"TXA", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"STY", 3, ABSOLUTE},   {"STA", 3, ABSOLUTE},   {"STX", 3, ABSOLUTE},   {"???", 1, IMPLIED},
-    {"BCC", 2, RELATIVE},   {"STA", 2, INDIRECT_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"STY", 2, ZEROPAGE_X}, {"STA", 2, ZEROPAGE_X}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"TYA", 1, IMPLIED},    {"STA", 3, ABSOLUTE_Y}, {"TXS", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"STA", 3, ABSOLUTE_X}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"LDY", 2, IMMEDIATE},  {"LDA", 2, INDIRECT_X}, {"LDX", 2, IMMEDIATE},  {"???", 1, IMPLIED},
-    {"LDY", 2, ZEROPAGE},   {"LDA", 2, ZEROPAGE},   {"LDX", 2, ZEROPAGE},   {"???", 1, IMPLIED},
-    {"TAY", 1, IMPLIED},    {"LDA", 2, IMMEDIATE},  {"TAX", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"LDY", 3, ABSOLUTE},   {"LDA", 3, ABSOLUTE},   {"LDX", 3, ABSOLUTE},   {"???", 1, IMPLIED},
-    {"BCS", 2, RELATIVE},   {"LDA", 2, INDIRECT_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"LDY", 2, ZEROPAGE_X}, {"LDA", 2, ZEROPAGE_X}, {"LDX", 2, ZEROPAGE_Y}, {"???", 1, IMPLIED},
-    {"CLV", 1, IMPLIED},    {"LDA", 3, ABSOLUTE_Y}, {"TSX", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"LDY", 3, ABSOLUTE_X}, {"LDA", 3, ABSOLUTE_X}, {"LDX", 3, ABSOLUTE_Y}, {"???", 1, IMPLIED},
-    {"CPY", 2, IMMEDIATE},  {"CMP", 2, INDIRECT_X}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"CPY", 2, ZEROPAGE},   {"CMP", 2, ZEROPAGE},   {"DEC", 2, ZEROPAGE},   {"???", 1, IMPLIED},
-    {"INY", 1, IMPLIED},    {"CMP", 2, IMMEDIATE},  {"DEX", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"CPY", 3, ABSOLUTE},   {"CMP", 3, ABSOLUTE},   {"DEC", 3, ABSOLUTE},   {"???", 1, IMPLIED},
-    {"BNE", 2, RELATIVE},   {"CMP", 2, INDIRECT_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"CMP", 2, ZEROPAGE_X}, {"DEC", 2, ZEROPAGE_X}, {"???", 1, IMPLIED},
-    {"CLD", 1, IMPLIED},    {"CMP", 3, ABSOLUTE_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"CMP", 3, ABSOLUTE_X}, {"DEC", 3, ABSOLUTE_X}, {"???", 1, IMPLIED},
-    {"CPX", 2, IMMEDIATE},  {"SBC", 2, INDIRECT_X}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"CPX", 2, ZEROPAGE},   {"SBC", 2, ZEROPAGE},   {"INC", 2, ZEROPAGE},   {"???", 1, IMPLIED},
-    {"INX", 1, IMPLIED},    {"SBC", 2, IMMEDIATE},  {"NOP", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"CPX", 3, ABSOLUTE},   {"SBC", 3, ABSOLUTE},   {"INC", 3, ABSOLUTE},   {"???", 1, IMPLIED},
-    {"BEQ", 2, RELATIVE},   {"SBC", 2, INDIRECT_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"SBC", 2, ZEROPAGE_X}, {"INC", 2, ZEROPAGE_X}, {"???", 1, IMPLIED},
-    {"SED", 1, IMPLIED},    {"SBC", 3, ABSOLUTE_Y}, {"???", 1, IMPLIED},    {"???", 1, IMPLIED},
-    {"???", 1, IMPLIED},    {"SBC", 3, ABSOLUTE_X}, {"INC", 3, ABSOLUTE_X}, {"???", 1, IMPLIED}
+    {"BRK", IMPLIED},    {"ORA", INDIRECT_X}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"ORA", ZEROPAGE},   {"ASL", ZEROPAGE},   {"???", IMPLIED},
+    {"PHP", IMPLIED},    {"ORA", IMMEDIATE},  {"ASL", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"ORA", ABSOLUTE},   {"ASL", ABSOLUTE},   {"???", IMPLIED},
+    {"BPL", RELATIVE},   {"ORA", INDIRECT_Y}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"ORA", ZEROPAGE_X}, {"ASL", ZEROPAGE_X}, {"???", IMPLIED},
+    {"CLC", IMPLIED},    {"ORA", ABSOLUTE_Y}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"ORA", ABSOLUTE_X}, {"ASL", ABSOLUTE_X}, {"???", IMPLIED},
+    {"JSR", ABSOLUTE},   {"AND", INDIRECT_X}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"BIT", ZEROPAGE},   {"AND", ZEROPAGE},   {"ROL", ZEROPAGE},   {"???", IMPLIED},
+    {"PLP", IMPLIED},    {"AND", IMMEDIATE},  {"ROL", IMPLIED},    {"???", IMPLIED},
+    {"BIT", ABSOLUTE},   {"AND", ABSOLUTE},   {"ROL", ABSOLUTE},   {"???", IMPLIED},
+    {"BMI", RELATIVE},   {"AND", INDIRECT_Y}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"AND", ZEROPAGE_X}, {"ROL", ZEROPAGE_X}, {"???", IMPLIED},
+    {"SEC", IMPLIED},    {"AND", ABSOLUTE_Y}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"AND", ABSOLUTE_X}, {"ROL", ABSOLUTE_X}, {"???", IMPLIED},
+    {"RTI", IMPLIED},    {"EOR", INDIRECT_X}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"EOR", ZEROPAGE},   {"LSR", ZEROPAGE},   {"???", IMPLIED},
+    {"PHA", IMPLIED},    {"EOR", IMMEDIATE},  {"LSR", IMPLIED},    {"???", IMPLIED},
+    {"JMP", ABSOLUTE},   {"EOR", ABSOLUTE},   {"LSR", ABSOLUTE},   {"???", IMPLIED},
+    {"BVC", RELATIVE},   {"EOR", INDIRECT_Y}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"EOR", ZEROPAGE_X}, {"LSR", ZEROPAGE_X}, {"???", IMPLIED},
+    {"CLI", IMPLIED},    {"EOR", ABSOLUTE_Y}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"EOR", ABSOLUTE_X}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"RTS", IMPLIED},    {"ADC", INDIRECT_X}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"ADC", ZEROPAGE},   {"ROR", ZEROPAGE},   {"???", IMPLIED},
+    {"PLA", IMPLIED},    {"ADC", IMMEDIATE},  {"ROR", IMPLIED},    {"???", IMPLIED},
+    {"JMP", INDIRECT},   {"ADC", ABSOLUTE},   {"ROR", ABSOLUTE},   {"???", IMPLIED},
+    {"BVS", RELATIVE},   {"ADC", INDIRECT_Y}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"ADC", ZEROPAGE_X}, {"ROR", ZEROPAGE_X}, {"???", IMPLIED},
+    {"SEI", IMPLIED},    {"ADC", ABSOLUTE_Y}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"ADC", ABSOLUTE_X}, {"ROR", ABSOLUTE_X}, {"???", IMPLIED},
+    {"???", IMPLIED},    {"STA", INDIRECT_X}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"STY", ZEROPAGE},   {"STA", ZEROPAGE},   {"STX", ZEROPAGE},   {"???", IMPLIED},
+    {"DEY", IMPLIED},    {"???", IMPLIED},    {"TXA", IMPLIED},    {"???", IMPLIED},
+    {"STY", ABSOLUTE},   {"STA", ABSOLUTE},   {"STX", ABSOLUTE},   {"???", IMPLIED},
+    {"BCC", RELATIVE},   {"STA", INDIRECT_Y}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"STY", ZEROPAGE_X}, {"STA", ZEROPAGE_X}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"TYA", IMPLIED},    {"STA", ABSOLUTE_Y}, {"TXS", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"STA", ABSOLUTE_X}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"LDY", IMMEDIATE},  {"LDA", INDIRECT_X}, {"LDX", IMMEDIATE},  {"???", IMPLIED},
+    {"LDY", ZEROPAGE},   {"LDA", ZEROPAGE},   {"LDX", ZEROPAGE},   {"???", IMPLIED},
+    {"TAY", IMPLIED},    {"LDA", IMMEDIATE},  {"TAX", IMPLIED},    {"???", IMPLIED},
+    {"LDY", ABSOLUTE},   {"LDA", ABSOLUTE},   {"LDX", ABSOLUTE},   {"???", IMPLIED},
+    {"BCS", RELATIVE},   {"LDA", INDIRECT_Y}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"LDY", ZEROPAGE_X}, {"LDA", ZEROPAGE_X}, {"LDX", ZEROPAGE_Y}, {"???", IMPLIED},
+    {"CLV", IMPLIED},    {"LDA", ABSOLUTE_Y}, {"TSX", IMPLIED},    {"???", IMPLIED},
+    {"LDY", ABSOLUTE_X}, {"LDA", ABSOLUTE_X}, {"LDX", ABSOLUTE_Y}, {"???", IMPLIED},
+    {"CPY", IMMEDIATE},  {"CMP", INDIRECT_X}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"CPY", ZEROPAGE},   {"CMP", ZEROPAGE},   {"DEC", ZEROPAGE},   {"???", IMPLIED},
+    {"INY", IMPLIED},    {"CMP", IMMEDIATE},  {"DEX", IMPLIED},    {"???", IMPLIED},
+    {"CPY", ABSOLUTE},   {"CMP", ABSOLUTE},   {"DEC", ABSOLUTE},   {"???", IMPLIED},
+    {"BNE", RELATIVE},   {"CMP", INDIRECT_Y}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"CMP", ZEROPAGE_X}, {"DEC", ZEROPAGE_X}, {"???", IMPLIED},
+    {"CLD", IMPLIED},    {"CMP", ABSOLUTE_Y}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"CMP", ABSOLUTE_X}, {"DEC", ABSOLUTE_X}, {"???", IMPLIED},
+    {"CPX", IMMEDIATE},  {"SBC", INDIRECT_X}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"CPX", ZEROPAGE},   {"SBC", ZEROPAGE},   {"INC", ZEROPAGE},   {"???", IMPLIED},
+    {"INX", IMPLIED},    {"SBC", IMMEDIATE},  {"NOP", IMPLIED},    {"???", IMPLIED},
+    {"CPX", ABSOLUTE},   {"SBC", ABSOLUTE},   {"INC", ABSOLUTE},   {"???", IMPLIED},
+    {"BEQ", RELATIVE},   {"SBC", INDIRECT_Y}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"SBC", ZEROPAGE_X}, {"INC", ZEROPAGE_X}, {"???", IMPLIED},
+    {"SED", IMPLIED},    {"SBC", ABSOLUTE_Y}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"SBC", ABSOLUTE_X}, {"INC", ABSOLUTE_X}, {"???", IMPLIED}
 };
 
-/* name, size in bytes, type */
+/* name, type */
 mnemonics mne_illegal[] = {
-    {"BRK", 1, IMPLIED},    {"ORA", 2, INDIRECT_X}, {"KIL", 1, IMPLIED},    {"SLO", 2, INDIRECT_X},
-    {"NOP", 2, ZEROPAGE},   {"ORA", 2, ZEROPAGE},   {"ASL", 2, ZEROPAGE},   {"SLO", 2, ZEROPAGE},
-    {"PHP", 1, IMPLIED},    {"ORA", 2, IMMEDIATE},  {"ASL", 2, IMPLIED},    {"ANC", 2, IMMEDIATE},
-    {"NOP", 3, ABSOLUTE},   {"ORA", 3, ABSOLUTE},   {"ASL", 3, ABSOLUTE},   {"SLO", 3, ABSOLUTE},
-    {"BPL", 2, RELATIVE},   {"ORA", 2, INDIRECT_Y}, {"KIL", 1, IMPLIED},    {"SLO", 2, INDIRECT_Y},
-    {"NOP", 2, ZEROPAGE_X}, {"ORA", 2, ZEROPAGE_X}, {"ASL", 2, ZEROPAGE_X}, {"SLO", 2, ZEROPAGE_X},
-    {"CLC", 1, IMPLIED},    {"ORA", 3, ABSOLUTE_Y}, {"NOP", 1, IMPLIED},    {"SLO", 3, ABSOLUTE_Y},
-    {"NOP", 3, ABSOLUTE_X}, {"ORA", 3, ABSOLUTE_X}, {"ASL", 3, ABSOLUTE_X}, {"SLO", 3, ABSOLUTE_X},
-    {"JSR", 3, ABSOLUTE},   {"AND", 2, INDIRECT_X}, {"KIL", 1, IMPLIED},    {"RLA", 2, INDIRECT_X},
-    {"BIT", 2, ZEROPAGE},   {"AND", 2, ZEROPAGE},   {"ROL", 2, ZEROPAGE},   {"RLA", 2, ZEROPAGE},
-    {"PLP", 1, IMPLIED},    {"AND", 2, IMMEDIATE},  {"ROL", 1, IMPLIED},    {"ANC", 2, IMMEDIATE},
-    {"BIT", 3, ABSOLUTE},   {"AND", 3, ABSOLUTE},   {"ROL", 3, ABSOLUTE},   {"RLA", 3, ABSOLUTE},
-    {"BMI", 2, RELATIVE},   {"AND", 2, INDIRECT_Y}, {"KIL", 1, IMPLIED},    {"RLA", 2, INDIRECT_Y},
-    {"NOP", 2, ZEROPAGE_X}, {"AND", 2, ZEROPAGE_X}, {"ROL", 2, ZEROPAGE_X}, {"RLA", 2, ZEROPAGE_X},
-    {"SEC", 1, IMPLIED},    {"AND", 3, ABSOLUTE_Y}, {"NOP", 1, IMPLIED},    {"RLA", 3, ABSOLUTE_Y},
-    {"NOP", 3, ABSOLUTE_X}, {"AND", 3, ABSOLUTE_X}, {"ROL", 3, ABSOLUTE_X}, {"RLA", 3, ABSOLUTE_X},
-    {"RTI", 1, IMPLIED},    {"EOR", 2, INDIRECT_X}, {"KIL", 1, IMPLIED},    {"SRE", 2, INDIRECT_X},
-    {"NOP", 2, ZEROPAGE},   {"EOR", 2, ZEROPAGE},   {"LSR", 2, ZEROPAGE},   {"SRE", 2, ZEROPAGE},
-    {"PHA", 1, IMPLIED},    {"EOR", 2, IMMEDIATE},  {"LSR", 1, IMPLIED},    {"ALR", 2, IMMEDIATE},
-    {"JMP", 3, ABSOLUTE},   {"EOR", 3, ABSOLUTE},   {"LSR", 3, ABSOLUTE},   {"SRE", 3, ABSOLUTE},
-    {"BVC", 2, RELATIVE},   {"EOR", 2, INDIRECT_Y}, {"KIL", 1, IMPLIED},    {"SRE", 2, INDIRECT_Y},
-    {"NOP", 2, ZEROPAGE_X}, {"EOR", 2, ZEROPAGE_X}, {"LSR", 2, ZEROPAGE_X}, {"SRE", 2, ZEROPAGE_X},
-    {"CLI", 1, IMPLIED},    {"EOR", 3, ABSOLUTE_Y}, {"NOP", 1, IMPLIED},    {"SRE", 3, ABSOLUTE_Y},
-    {"NOP", 3, ABSOLUTE_X}, {"EOR", 3, ABSOLUTE_X}, {"LSR", 3, ABSOLUTE_X}, {"SRE", 3, ABSOLUTE_X},
-    {"RTS", 1, IMPLIED},    {"ADC", 2, INDIRECT_X}, {"KIL", 1, IMPLIED},    {"RRA", 2, INDIRECT_X},
-    {"NOP", 2, ZEROPAGE},   {"ADC", 2, ZEROPAGE},   {"ROR", 2, ZEROPAGE},   {"RRA", 2, ZEROPAGE},
-    {"PLA", 1, IMPLIED},    {"ADC", 2, IMMEDIATE},  {"ROR", 1, IMPLIED},    {"ARR", 2, IMMEDIATE},
-    {"JMP", 3, INDIRECT},   {"ADC", 3, ABSOLUTE},   {"ROR", 3, ABSOLUTE},   {"RRA", 3, ABSOLUTE},
-    {"BVS", 2, RELATIVE},   {"ADC", 2, INDIRECT_Y}, {"KIL", 1, IMPLIED},    {"RRA", 2, INDIRECT_Y},
-    {"NOP", 2, ZEROPAGE_X}, {"ADC", 2, ZEROPAGE_X}, {"ROR", 2, ZEROPAGE_X}, {"RRA", 2, ZEROPAGE_X},
-    {"SEI", 1, IMPLIED},    {"ADC", 3, ABSOLUTE_Y}, {"NOP", 1, IMPLIED},    {"RRA", 3, ABSOLUTE_Y},
-    {"NOP", 3, ABSOLUTE_X}, {"ADC", 3, ABSOLUTE_X}, {"ROR", 3, ABSOLUTE_X}, {"RRA", 3, ABSOLUTE_X},
-    {"NOP", 2, IMMEDIATE},  {"STA", 2, INDIRECT_X}, {"NOP", 2, IMMEDIATE},  {"SAX", 2, INDIRECT_X},
-    {"STY", 2, ZEROPAGE},   {"STA", 2, ZEROPAGE},   {"STX", 2, ZEROPAGE},   {"SAX", 2, ZEROPAGE},
-    {"DEY", 1, IMPLIED},    {"NOP", 2, IMMEDIATE},  {"TXA", 1, IMPLIED},    {"XAA", 2, IMMEDIATE},
-    {"STY", 3, ABSOLUTE},   {"STA", 3, ABSOLUTE},   {"STX", 3, ABSOLUTE},   {"SAX", 3, ABSOLUTE},
-    {"BCC", 2, RELATIVE},   {"STA", 2, INDIRECT_Y}, {"KIL", 1, IMPLIED},    {"AHX", 2, INDIRECT_Y},
-    {"STY", 2, ZEROPAGE_X}, {"STA", 2, ZEROPAGE_X}, {"STX", 2, ZEROPAGE_Y}, {"SAX", 2, ZEROPAGE_Y},
-    {"TYA", 1, IMPLIED},    {"STA", 3, ABSOLUTE_Y}, {"TXS", 1, IMPLIED},    {"TAS", 1, IMPLIED},
-    {"SHY", 3, ABSOLUTE_X}, {"STA", 3, ABSOLUTE_X}, {"SHX", 3, ABSOLUTE_Y}, {"AHX", 3, ABSOLUTE_Y},
-    {"LDY", 2, IMMEDIATE},  {"LDA", 2, INDIRECT_X}, {"LDX", 2, IMMEDIATE},  {"LAX", 2, INDIRECT_X},
-    {"LDY", 2, ZEROPAGE},   {"LDA", 2, ZEROPAGE},   {"LDX", 2, ZEROPAGE},   {"LAX", 2, ZEROPAGE},
-    {"TAY", 1, IMPLIED},    {"LDA", 2, IMMEDIATE},  {"TAX", 1, IMPLIED},    {"LAX", 2, IMMEDIATE},
-    {"LDY", 3, ABSOLUTE},   {"LDA", 3, ABSOLUTE},   {"LDX", 3, ABSOLUTE},   {"LAX", 3, ABSOLUTE},
-    {"BCS", 2, RELATIVE},   {"LDA", 2, INDIRECT_Y}, {"KIL", 1, IMPLIED},    {"LAX", 2, INDIRECT_Y},
-    {"LDY", 2, ZEROPAGE_X}, {"LDA", 2, ZEROPAGE_X}, {"LDX", 2, ZEROPAGE_Y}, {"LAX", 2, ZEROPAGE_Y},
-    {"CLV", 1, IMPLIED},    {"LDA", 3, ABSOLUTE_Y}, {"TSX", 1, IMPLIED},    {"LAS", 3, ABSOLUTE_Y},
-    {"LDY", 3, ABSOLUTE_X}, {"LDA", 3, ABSOLUTE_X}, {"LDX", 3, ABSOLUTE_Y}, {"LAX", 3, ABSOLUTE_Y},
-    {"CPY", 2, IMMEDIATE},  {"CMP", 2, INDIRECT_X}, {"NOP", 2, IMMEDIATE},  {"DCP", 2, INDIRECT_X},
-    {"CPY", 2, ZEROPAGE},   {"CMP", 2, ZEROPAGE},   {"DEC", 2, ZEROPAGE},   {"DCP", 2, ZEROPAGE},
-    {"INY", 1, IMPLIED},    {"CMP", 2, IMMEDIATE},  {"DEX", 1, IMPLIED},    {"AXS", 2, IMMEDIATE},
-    {"CPY", 3, ABSOLUTE},   {"CMP", 3, ABSOLUTE},   {"DEC", 3, ABSOLUTE},   {"DCP", 3, ABSOLUTE},
-    {"BNE", 2, RELATIVE},   {"CMP", 2, INDIRECT_Y}, {"KIL", 1, IMPLIED},    {"DCP", 2, INDIRECT_Y},
-    {"NOP", 2, ZEROPAGE_X}, {"CMP", 2, ZEROPAGE_X}, {"DEC", 2, ZEROPAGE_X}, {"DCP", 2, ZEROPAGE_X},
-    {"CLD", 1, IMPLIED},    {"CMP", 3, ABSOLUTE_Y}, {"NOP", 1, IMPLIED},    {"DCP", 3, ABSOLUTE_Y},
-    {"NOP", 3, ABSOLUTE_X}, {"CMP", 3, ABSOLUTE_X}, {"DEC", 3, ABSOLUTE_X}, {"DCP", 3, ABSOLUTE_X},
-    {"CPX", 2, IMMEDIATE},  {"SBC", 2, INDIRECT_X}, {"NOP", 2, IMMEDIATE},  {"ISC", 2, INDIRECT_X},
-    {"CPX", 2, ZEROPAGE},   {"SBC", 2, ZEROPAGE},   {"INC", 2, ZEROPAGE},   {"ISC", 2, ZEROPAGE},
-    {"INX", 1, IMPLIED},    {"SBC", 2, IMMEDIATE},  {"NOP", 1, IMPLIED},    {"SBC", 2, IMMEDIATE},
-    {"CPX", 3, ABSOLUTE},   {"SBC", 3, ABSOLUTE},   {"INC", 3, ABSOLUTE},   {"ISC", 3, ABSOLUTE},
-    {"BEQ", 2, RELATIVE},   {"SBC", 2, INDIRECT_Y}, {"KIL", 1, IMPLIED},    {"ISC", 2, INDIRECT_Y},
-    {"NOP", 2, ZEROPAGE_X}, {"SBC", 2, ZEROPAGE_X}, {"INC", 2, ZEROPAGE_X}, {"ISC", 2, ZEROPAGE_X},
-    {"SED", 1, IMPLIED},    {"SBC", 3, ABSOLUTE_Y}, {"NOP", 1, IMPLIED},    {"ISC", 3, ABSOLUTE_Y},
-    {"NOP", 3, ABSOLUTE_X}, {"SBC", 3, ABSOLUTE_X}, {"INC", 3, ABSOLUTE_X}, {"ISC", 3, ABSOLUTE_X}
+    {"BRK", IMPLIED},    {"ORA", INDIRECT_X}, {"KIL", IMPLIED},    {"SLO", INDIRECT_X},
+    {"NOP", ZEROPAGE},   {"ORA", ZEROPAGE},   {"ASL", ZEROPAGE},   {"SLO", ZEROPAGE},
+    {"PHP", IMPLIED},    {"ORA", IMMEDIATE},  {"ASL", IMPLIED},    {"ANC", IMMEDIATE},
+    {"NOP", ABSOLUTE},   {"ORA", ABSOLUTE},   {"ASL", ABSOLUTE},   {"SLO", ABSOLUTE},
+    {"BPL", RELATIVE},   {"ORA", INDIRECT_Y}, {"KIL", IMPLIED},    {"SLO", INDIRECT_Y},
+    {"NOP", ZEROPAGE_X}, {"ORA", ZEROPAGE_X}, {"ASL", ZEROPAGE_X}, {"SLO", ZEROPAGE_X},
+    {"CLC", IMPLIED},    {"ORA", ABSOLUTE_Y}, {"NOP", IMPLIED},    {"SLO", ABSOLUTE_Y},
+    {"NOP", ABSOLUTE_X}, {"ORA", ABSOLUTE_X}, {"ASL", ABSOLUTE_X}, {"SLO", ABSOLUTE_X},
+    {"JSR", ABSOLUTE},   {"AND", INDIRECT_X}, {"KIL", IMPLIED},    {"RLA", INDIRECT_X},
+    {"BIT", ZEROPAGE},   {"AND", ZEROPAGE},   {"ROL", ZEROPAGE},   {"RLA", ZEROPAGE},
+    {"PLP", IMPLIED},    {"AND", IMMEDIATE},  {"ROL", IMPLIED},    {"ANC", IMMEDIATE},
+    {"BIT", ABSOLUTE},   {"AND", ABSOLUTE},   {"ROL", ABSOLUTE},   {"RLA", ABSOLUTE},
+    {"BMI", RELATIVE},   {"AND", INDIRECT_Y}, {"KIL", IMPLIED},    {"RLA", INDIRECT_Y},
+    {"NOP", ZEROPAGE_X}, {"AND", ZEROPAGE_X}, {"ROL", ZEROPAGE_X}, {"RLA", ZEROPAGE_X},
+    {"SEC", IMPLIED},    {"AND", ABSOLUTE_Y}, {"NOP", IMPLIED},    {"RLA", ABSOLUTE_Y},
+    {"NOP", ABSOLUTE_X}, {"AND", ABSOLUTE_X}, {"ROL", ABSOLUTE_X}, {"RLA", ABSOLUTE_X},
+    {"RTI", IMPLIED},    {"EOR", INDIRECT_X}, {"KIL", IMPLIED},    {"SRE", INDIRECT_X},
+    {"NOP", ZEROPAGE},   {"EOR", ZEROPAGE},   {"LSR", ZEROPAGE},   {"SRE", ZEROPAGE},
+    {"PHA", IMPLIED},    {"EOR", IMMEDIATE},  {"LSR", IMPLIED},    {"ALR", IMMEDIATE},
+    {"JMP", ABSOLUTE},   {"EOR", ABSOLUTE},   {"LSR", ABSOLUTE},   {"SRE", ABSOLUTE},
+    {"BVC", RELATIVE},   {"EOR", INDIRECT_Y}, {"KIL", IMPLIED},    {"SRE", INDIRECT_Y},
+    {"NOP", ZEROPAGE_X}, {"EOR", ZEROPAGE_X}, {"LSR", ZEROPAGE_X}, {"SRE", ZEROPAGE_X},
+    {"CLI", IMPLIED},    {"EOR", ABSOLUTE_Y}, {"NOP", IMPLIED},    {"SRE", ABSOLUTE_Y},
+    {"NOP", ABSOLUTE_X}, {"EOR", ABSOLUTE_X}, {"LSR", ABSOLUTE_X}, {"SRE", ABSOLUTE_X},
+    {"RTS", IMPLIED},    {"ADC", INDIRECT_X}, {"KIL", IMPLIED},    {"RRA", INDIRECT_X},
+    {"NOP", ZEROPAGE},   {"ADC", ZEROPAGE},   {"ROR", ZEROPAGE},   {"RRA", ZEROPAGE},
+    {"PLA", IMPLIED},    {"ADC", IMMEDIATE},  {"ROR", IMPLIED},    {"ARR", IMMEDIATE},
+    {"JMP", INDIRECT},   {"ADC", ABSOLUTE},   {"ROR", ABSOLUTE},   {"RRA", ABSOLUTE},
+    {"BVS", RELATIVE},   {"ADC", INDIRECT_Y}, {"KIL", IMPLIED},    {"RRA", INDIRECT_Y},
+    {"NOP", ZEROPAGE_X}, {"ADC", ZEROPAGE_X}, {"ROR", ZEROPAGE_X}, {"RRA", ZEROPAGE_X},
+    {"SEI", IMPLIED},    {"ADC", ABSOLUTE_Y}, {"NOP", IMPLIED},    {"RRA", ABSOLUTE_Y},
+    {"NOP", ABSOLUTE_X}, {"ADC", ABSOLUTE_X}, {"ROR", ABSOLUTE_X}, {"RRA", ABSOLUTE_X},
+    {"NOP", IMMEDIATE},  {"STA", INDIRECT_X}, {"NOP", IMMEDIATE},  {"SAX", INDIRECT_X},
+    {"STY", ZEROPAGE},   {"STA", ZEROPAGE},   {"STX", ZEROPAGE},   {"SAX", ZEROPAGE},
+    {"DEY", IMPLIED},    {"NOP", IMMEDIATE},  {"TXA", IMPLIED},    {"XAA", IMMEDIATE},
+    {"STY", ABSOLUTE},   {"STA", ABSOLUTE},   {"STX", ABSOLUTE},   {"SAX", ABSOLUTE},
+    {"BCC", RELATIVE},   {"STA", INDIRECT_Y}, {"KIL", IMPLIED},    {"AHX", INDIRECT_Y},
+    {"STY", ZEROPAGE_X}, {"STA", ZEROPAGE_X}, {"STX", ZEROPAGE_Y}, {"SAX", ZEROPAGE_Y},
+    {"TYA", IMPLIED},    {"STA", ABSOLUTE_Y}, {"TXS", IMPLIED},    {"TAS", IMPLIED},
+    {"SHY", ABSOLUTE_X}, {"STA", ABSOLUTE_X}, {"SHX", ABSOLUTE_Y}, {"AHX", ABSOLUTE_Y},
+    {"LDY", IMMEDIATE},  {"LDA", INDIRECT_X}, {"LDX", IMMEDIATE},  {"LAX", INDIRECT_X},
+    {"LDY", ZEROPAGE},   {"LDA", ZEROPAGE},   {"LDX", ZEROPAGE},   {"LAX", ZEROPAGE},
+    {"TAY", IMPLIED},    {"LDA", IMMEDIATE},  {"TAX", IMPLIED},    {"LAX", IMMEDIATE},
+    {"LDY", ABSOLUTE},   {"LDA", ABSOLUTE},   {"LDX", ABSOLUTE},   {"LAX", ABSOLUTE},
+    {"BCS", RELATIVE},   {"LDA", INDIRECT_Y}, {"KIL", IMPLIED},    {"LAX", INDIRECT_Y},
+    {"LDY", ZEROPAGE_X}, {"LDA", ZEROPAGE_X}, {"LDX", ZEROPAGE_Y}, {"LAX", ZEROPAGE_Y},
+    {"CLV", IMPLIED},    {"LDA", ABSOLUTE_Y}, {"TSX", IMPLIED},    {"LAS", ABSOLUTE_Y},
+    {"LDY", ABSOLUTE_X}, {"LDA", ABSOLUTE_X}, {"LDX", ABSOLUTE_Y}, {"LAX", ABSOLUTE_Y},
+    {"CPY", IMMEDIATE},  {"CMP", INDIRECT_X}, {"NOP", IMMEDIATE},  {"DCP", INDIRECT_X},
+    {"CPY", ZEROPAGE},   {"CMP", ZEROPAGE},   {"DEC", ZEROPAGE},   {"DCP", ZEROPAGE},
+    {"INY", IMPLIED},    {"CMP", IMMEDIATE},  {"DEX", IMPLIED},    {"AXS", IMMEDIATE},
+    {"CPY", ABSOLUTE},   {"CMP", ABSOLUTE},   {"DEC", ABSOLUTE},   {"DCP", ABSOLUTE},
+    {"BNE", RELATIVE},   {"CMP", INDIRECT_Y}, {"KIL", IMPLIED},    {"DCP", INDIRECT_Y},
+    {"NOP", ZEROPAGE_X}, {"CMP", ZEROPAGE_X}, {"DEC", ZEROPAGE_X}, {"DCP", ZEROPAGE_X},
+    {"CLD", IMPLIED},    {"CMP", ABSOLUTE_Y}, {"NOP", IMPLIED},    {"DCP", ABSOLUTE_Y},
+    {"NOP", ABSOLUTE_X}, {"CMP", ABSOLUTE_X}, {"DEC", ABSOLUTE_X}, {"DCP", ABSOLUTE_X},
+    {"CPX", IMMEDIATE},  {"SBC", INDIRECT_X}, {"NOP", IMMEDIATE},  {"ISC", INDIRECT_X},
+    {"CPX", ZEROPAGE},   {"SBC", ZEROPAGE},   {"INC", ZEROPAGE},   {"ISC", ZEROPAGE},
+    {"INX", IMPLIED},    {"SBC", IMMEDIATE},  {"NOP", IMPLIED},    {"SBC", IMMEDIATE},
+    {"CPX", ABSOLUTE},   {"SBC", ABSOLUTE},   {"INC", ABSOLUTE},   {"ISC", ABSOLUTE},
+    {"BEQ", RELATIVE},   {"SBC", INDIRECT_Y}, {"KIL", IMPLIED},    {"ISC", INDIRECT_Y},
+    {"NOP", ZEROPAGE_X}, {"SBC", ZEROPAGE_X}, {"INC", ZEROPAGE_X}, {"ISC", ZEROPAGE_X},
+    {"SED", IMPLIED},    {"SBC", ABSOLUTE_Y}, {"NOP", IMPLIED},    {"ISC", ABSOLUTE_Y},
+    {"NOP", ABSOLUTE_X}, {"SBC", ABSOLUTE_X}, {"INC", ABSOLUTE_X}, {"ISC", ABSOLUTE_X}
 };
 
 void disasm(char *buffer, int size, int illegal)
@@ -167,17 +181,17 @@ void disasm(char *buffer, int size, int illegal)
         printf("%04X ", address);
 
         // hexdump
-        switch (mne[opcode].size) {
+        switch (op_length[mne[opcode].type]) {
             case 2:
                 low = buffer[index++];
-                address += mne[opcode].size;
+                address += op_length[mne[opcode].type];
                 printf("%02X %02X     ", opcode, low);
                 break;
 
             case 3:
                 low = buffer[index++];
                 high = buffer[index++];
-                address += mne[opcode].size;
+                address += op_length[mne[opcode].type];
                 printf("%02X %02X %02X  ", opcode, low, high);
                 break;
 

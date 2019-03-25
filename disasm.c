@@ -1,7 +1,6 @@
 #include "disasm.h"
 
 #include <stdio.h>
-#include <stdint.h>
 
 /* Addressing modes */
 enum {
@@ -164,7 +163,7 @@ mnemonics mne_illegal[] = {
     {"NOP", ABSOLUTE_X}, {"SBC", ABSOLUTE_X}, {"INC", ABSOLUTE_X}, {"ISC", ABSOLUTE_X}
 };
 
-void disasm(char *buffer, int size, int illegal)
+void disasm(uint8_t *buffer, int size, int illegal)
 {
     mnemonics *mne = illegal ? (mnemonics*)&mne_illegal : (mnemonics*)&mne_legal;
 

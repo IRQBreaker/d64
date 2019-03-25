@@ -1,6 +1,8 @@
 #ifndef DISASM_H_
 #define DISASM_H_
 
-void disasm(char *buffer, int size, int illegal);
+#include <stdint.h>
+
+void disasm(uint8_t *buffer, int size, int illegal);
 
 #endif // DISASM_H_

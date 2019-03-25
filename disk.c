@@ -1,7 +1,6 @@
 #include "disk.h"
 
 #include <stdio.h>
-#include <stdint.h>
 #include <ctype.h>
 
 #define SIZE_35_TRACK             174848
@@ -160,7 +159,7 @@ int validate_disk(int filesize)
     return 1;
 }
 
-void showdisk(char *buffer)
+void showdisk(uint8_t *buffer)
 {
     track_sector ts = {.track = 18, .sector = 0};
     int offset = memory_offset(&ts);

@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
@@ -13,7 +14,7 @@
 
 typedef enum {BIN, D64} filetype;
 
-filetype get_filetype(char *buffer, char *filename, int size)
+filetype get_filetype(uint8_t *buffer, char *filename, int size)
 {
     (void)buffer; // To be used at a later stage
 
@@ -50,7 +51,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    char *buffer = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    uint8_t *buffer = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (buffer == MAP_FAILED) {
         perror("Error");
         close(fd);

@@ -14,13 +14,13 @@ enum {
     INDIRECT_X,   // STA $(02,X)
     INDIRECT_Y,   // STA $(40),Y
     ZEROPAGE_X,   // LDA $20,X
-    INDIRECT,     // JMP ($8000)
     ZEROPAGE_Y,   // LDA $30,Y
+    INDIRECT,     // JMP ($8000)
     RELATIVE      // BNE $9000
 };
 
 // Length of addressing modes
-int op_length[] = {1, 2, 3, 3, 3, 2, 2, 2, 2, 3, 2, 2};
+int op_length[] = {1, 2, 3, 3, 3, 2, 2, 2, 2, 2, 3, 2};
 
 typedef struct
 {

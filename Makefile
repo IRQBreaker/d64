@@ -11,6 +11,7 @@ CFLAGS = -Wall -Wextra -Werror -pedantic --std=c99 -O2 -s
 SRCFILES := $(wildcard $(SRCDIR)/*.c)
 OBJFILES := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCFILES))
 DEPFILES := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.d,$(SRCFILES))
+NODEPS := clean mrproper cppcheck gtags
 
 $(BINDIR)/$(TARGET): $(OBJFILES)
 	@mkdir -p $(@D)
@@ -24,7 +25,9 @@ $(OBJDIR)/%.d: $(SRCDIR)/%.c
 	@mkdir -p $(@D)
 	$(CC) $(INCDIRS) -MM $< | sed -e 's%^%$@ %' -e 's% % $(OBJDIR)/%'\ > $@
 
--include $(DEPFILES)
+ifeq (0, $(words $(findstring $(MAKECMDGOALS), $(NODEPS))))
+    -include $(DEPFILES)
+endif
 
 .PHONY: clean mrproper cppcheck gtags
 clean:

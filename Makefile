@@ -29,7 +29,7 @@ ifeq (0, $(words $(findstring $(MAKECMDGOALS), $(NODEPS))))
     -include $(DEPFILES)
 endif
 
-.PHONY: clean mrproper cppcheck gtags
+.PHONY: $(NODEPS)
 clean:
 	rm -rf $(BINDIR) $(OBJDIR)
 

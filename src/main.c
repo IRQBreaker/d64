@@ -46,16 +46,14 @@ static filetype get_filetype(const uint8_t *buffer, const char *filename)
 
 int main(int argc, char **argv)
 {
-    int optaddr = 0;
     int optforce = 0;
     int optillegal = 0;
-    uint16_t address = 0;
+    int address = -1;
     char c;
+    char *end;
     while ((c = getopt(argc, argv, "fiha:")) != -1) {
         switch (c) {
             case 'a':
-                optaddr = 1;
-                char *end;
                 address = strtol(optarg, &end, 0);
                 if (end == optarg) {
                     errno = EINVAL;

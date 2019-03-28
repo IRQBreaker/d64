@@ -163,14 +163,14 @@ const mnemonics mne_illegal[] = {
     {"nop", ABSOLUTE_X}, {"sbc", ABSOLUTE_X}, {"inc", ABSOLUTE_X}, {"isc", ABSOLUTE_X}
 };
 
-void disasm(const uint8_t *buffer, const int size, const uint16_t address, const int illegal)
+void disasm(const uint8_t *buffer, const int size, const int address, const int illegal)
 {
     mnemonics *mne = illegal ? (mnemonics*)&mne_illegal : (mnemonics*)&mne_legal;
 
     int index = 0;
     uint16_t addr;
 
-    if (address == 0) {
+    if (address < 0) {
         // Get loading address and advance index
         addr = buffer[0] + ((buffer[1] & 0xff) << 8);
         index = 2;

@@ -17,15 +17,13 @@ typedef enum {BIN, D64, BAS} filetype;
 
 static filetype get_filetype(const uint8_t *buffer, const char *filename)
 {
-    int length = strlen(filename);
-
     // Not enough to determine file type
-    if (length < 4)
+    if (strlen(filename) < 4)
         return BIN;
 
     // D64 disk image
-    if ((!strncmp(&filename[length - 3], "d64", 3) ||
-            !strncmp(&filename[length - 3], "D64", 3)))
+    if ((!strncmp(&filename[strlen(filename) - 3], "d64", 3) ||
+            !strncmp(&filename[strlen(filename) - 3], "D64", 3)))
         return D64;
 
     // C64 basic

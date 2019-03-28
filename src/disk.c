@@ -165,10 +165,8 @@ void showdisk(const uint8_t *buffer, const int size)
                 if (ftype > 4)
                     ftype = (sizeof(file_type) / sizeof(file_type[0])) - 1;
 
-                const char *filetype = file_type[ftype];
-
                 printf("  %-3s (0x%02X), %3d sectors, %6d bytes",
-                        filetype, de->filetype, file_sector_size(de), file_size(de));
+                        file_type[ftype], de->filetype, file_sector_size(de), file_size(de));
                 printf(" (%02d,%02d)\n", de->filetrack, de->filesector);
             }
         }

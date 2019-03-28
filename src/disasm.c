@@ -183,22 +183,20 @@ void disasm(const uint8_t *buffer, const int size, const int illegal)
         switch (op_length[mne[opcode].type]) {
             case 2:
                 low = buffer[index++];
-                address += op_length[mne[opcode].type];
                 printf("%02x %02x     ", opcode, low);
                 break;
 
             case 3:
                 low = buffer[index++];
                 high = buffer[index++];
-                address += op_length[mne[opcode].type];
                 printf("%02x %02x %02x  ", opcode, low, high);
                 break;
 
             default:
-                address++;
                 printf("%02x        ", opcode);
                 break;
         }
+        address += op_length[mne[opcode].type];
 
         // mnemonic
         printf("%s ", mne[opcode].mnemonic);

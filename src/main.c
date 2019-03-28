@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <string.h>
+#include <getopt.h>
+#include <libgen.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
@@ -14,6 +16,15 @@
 #include <errno.h>
 
 typedef enum {BIN, D64, BAS} filetype;
+
+static void printhelp(char *program)
+{
+    printf("Usage: %s [options] file\n" \
+        "  -a address  disassemble from address\n" \
+        "  -f          force disassembly\n" \
+        "  -i          show illegal opcodes\n" \
+        "  -h          this help text\n", basename(program));
+}
 
 static filetype get_filetype(const uint8_t *buffer, const char *filename)
 {
@@ -36,11 +47,49 @@ static filetype get_filetype(const uint8_t *buffer, const char *filename)
 int main(int argc, char **argv)
 {
     if (argc < 2) {
-        fprintf(stderr, "Not enough arguments\n");
+        printhelp(argv[0]);
         return EXIT_FAILURE;
     }
 
-    int fd = open(argv[1], O_RDONLY);
+    int optaddr = 0;
+    int optforce = 0;
+    int optillegal = 0;
+    uint16_t address = 0;
+    char c;
+    while ((c = getopt(argc, argv, "fiha:")) != -1) {
+        switch (c) {
+            case 'a':
+                optaddr = 1;
+                char *end;
+                address = strtol(optarg, &end, 0);
+                if (end == optarg) {
+                    errno = EINVAL;
+                    perror("Error");
+                    return EXIT_FAILURE;
+                }
+                break;
+
+            case 'f':
+                optforce = 1;
+                break;
+
+            case 'i':
+                optillegal = 1;
+                break;
+
+            case 'h':
+            default:
+                printhelp(argv[0]);
+                return EXIT_SUCCESS;
+        }
+    }
+
+    if (optind >= argc) {
+        fprintf(stderr, "Missing filename\n");
+        return EXIT_FAILURE;
+    }
+
+    int fd = open(argv[optind], O_RDONLY);
     if (fd < 0) {
         perror("Error");
         return EXIT_FAILURE;
@@ -60,19 +109,23 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    switch (get_filetype(buffer, argv[1])) {
-        case D64:
-            showdisk(buffer, st.st_size);
-            break;
+    if (optforce)
+        disasm(buffer, st.st_size, address, optillegal);
+    else {
+        switch (get_filetype(buffer, argv[optind])) {
+            case D64:
+                showdisk(buffer, st.st_size);
+                break;
 
-        case BAS:
-            showbasic(buffer, st.st_size);
-            break;
+            case BAS:
+                showbasic(buffer, st.st_size);
+                break;
 
-        case BIN:
-        default:
-            disasm(buffer, st.st_size, 0);
-            break;
+            case BIN:
+            default:
+                disasm(buffer, st.st_size, address, optillegal);
+                break;
+        }
     }
 
     munmap(buffer, st.st_size);

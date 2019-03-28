@@ -6,7 +6,13 @@ OBJDIR := obj
 CC := gcc
 LINKER := gcc
 INCDIRS := -I$(SRCDIR)
-CFLAGS = -Wall -Wextra -Werror -pedantic --std=c99 -O2 -s
+
+DEBUG ?= 0
+ifeq ($(DEBUG), 0)
+   CFLAGS = -Wall -Wextra -Werror -pedantic --std=c99 -O2 -s
+else
+   CFLAGS = -Wall -Wextra -Werror -pedantic --std=c99 -O0 -ggdb
+endif
 
 SRCFILES := $(wildcard $(SRCDIR)/*.c)
 OBJFILES := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCFILES))

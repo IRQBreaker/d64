@@ -163,13 +163,19 @@ const mnemonics mne_illegal[] = {
     {"nop", ABSOLUTE_X}, {"sbc", ABSOLUTE_X}, {"inc", ABSOLUTE_X}, {"isc", ABSOLUTE_X}
 };
 
-void disasm(const uint8_t *buffer, const int size, const int illegal)
+void disasm(const uint8_t *buffer, const int size, const uint16_t address, const int illegal)
 {
     mnemonics *mne = illegal ? (mnemonics*)&mne_illegal : (mnemonics*)&mne_legal;
 
-    // Get loading address and advance index
-    uint16_t address = buffer[0] + ((buffer[1] & 0xff) << 8);
-    int index = 2;
+    int index = 0;
+    uint16_t addr;
+
+    if (address == 0) {
+        // Get loading address and advance index
+        addr = buffer[0] + ((buffer[1] & 0xff) << 8);
+        index = 2;
+    } else
+        addr = address;
 
     while (index < size) {
         uint8_t low = 0;
@@ -177,7 +183,7 @@ void disasm(const uint8_t *buffer, const int size, const int illegal)
         uint8_t opcode = buffer[index++];
 
         // address
-        printf("%04x ", address);
+        printf("%04x ", addr);
 
         // hexdump
         switch (op_length[mne[opcode].type]) {
@@ -196,7 +202,7 @@ void disasm(const uint8_t *buffer, const int size, const int illegal)
                 printf("%02x        ", opcode);
                 break;
         }
-        address += op_length[mne[opcode].type];
+        addr += op_length[mne[opcode].type];
 
         // mnemonic
         printf("%s ", mne[opcode].mnemonic);
@@ -234,7 +240,7 @@ void disasm(const uint8_t *buffer, const int size, const int illegal)
                 printf("($%02x%02x)", high, low);
                 break;
             case RELATIVE:
-                printf("$%04x", (low <= 127) ? address + low : address - (256 - low));
+                printf("$%04x", (low <= 127) ? addr + low : addr - (256 - low));
                 break;
             default:
                 /* IMPLIED */

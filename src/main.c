@@ -46,11 +46,6 @@ static filetype get_filetype(const uint8_t *buffer, const char *filename)
 
 int main(int argc, char **argv)
 {
-    if (argc < 2) {
-        printhelp(argv[0]);
-        return EXIT_FAILURE;
-    }
-
     int optaddr = 0;
     int optforce = 0;
     int optillegal = 0;
@@ -86,6 +81,7 @@ int main(int argc, char **argv)
 
     if (optind >= argc) {
         fprintf(stderr, "Missing filename\n");
+        printhelp(argv[0]);
         return EXIT_FAILURE;
     }
 

@@ -1,8 +1,5 @@
-#ifndef UTIL_H_
-#define UTIL_H_
+#pragma once
 
 #include <stdint.h>
 
 extern const uint8_t pet_asc[];
-
-#endif // UTIL_H_

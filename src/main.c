@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 {
     int optforce = 0;
     int optillegal = 0;
-    int address = -1;
+    uint16_t address = UINT16_MAX;
     char c;
     char *end;
     while ((c = getopt(argc, argv, "fiha:")) != -1) {

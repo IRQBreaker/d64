@@ -1,6 +1,7 @@
 #include "disk.h"
 #include "disasm.h"
 #include "basic.h"
+#include "sid.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +16,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-typedef enum {BIN, D64, BAS} filetype;
+typedef enum {BIN, D64, BAS, SID} filetype;
 
 static void printhelp(char *program)
 {
@@ -36,6 +37,11 @@ static filetype get_filetype(const uint8_t *buffer, const char *filename)
     if ((!strncmp(&filename[strlen(filename) - 3], "d64", 3) ||
             !strncmp(&filename[strlen(filename) - 3], "D64", 3)))
         return D64;
+
+    // SID file
+    if ((!strncmp(&filename[strlen(filename) - 3], "sid", 3) ||
+            !strncmp(&filename[strlen(filename) - 3], "SID", 3)))
+        return SID;
 
     // C64 basic
     if (buffer[0] == 0x01 && buffer[1] == 0x08)
@@ -113,6 +119,10 @@ int main(int argc, char **argv)
 
             case BAS:
                 showbasic(buffer, st.st_size);
+                break;
+
+            case SID:
+                showsid(buffer, st.st_size);
                 break;
 
             case BIN:

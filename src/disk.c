@@ -29,8 +29,6 @@
 #define FILENAME_LENGTH           16
 #define GEOS_INFO_LENGTH          6
 
-#define PACKED __attribute__ ((__packed__))
-
 typedef struct
 {
     uint8_t track;

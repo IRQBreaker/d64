@@ -19,7 +19,6 @@ typedef struct
     char name[32];
     char author[32];
     char copyright[32];
-#if 0
     union
     {
         struct
@@ -34,7 +33,6 @@ typedef struct
             uint8_t *data;
         } PACKED sidv2;
     } PACKED data;
-#endif
 } PACKED sid_header;
 
 #define MIN_FILE_LENGTH 0x76
@@ -54,4 +52,21 @@ void showsid(const uint8_t *buffer, const int size)
     printf("Number of songs: %d\n", ntohs(header->songs));
     printf("Default song:    %d\n", ntohs(header->dsong));
     printf("Speed:           %sHz\n", (ntohl(header->speed) == 0) ? "50" : "60");
+
+    uint8_t *c64;
+    if (ntohs(header->version) == 1)
+        c64 = (uint8_t *)&header->data.sidv1.data;
+    else
+        c64 = (uint8_t *)&header->data.sidv2.data;
+
+    uint16_t laddr;
+    if (ntohs(header->laddr) == 0)
+        laddr = c64[0] + ((c64[1] & 0xff) << 8);
+    else
+        laddr = ntohs(header->laddr);
+
+    printf("Load address:    0x%04x\n", laddr);
+    printf("Init address:    0x%04x\n", ntohs(header->iaddr));
+    printf("Play address:    0x%04x\n", ntohs(header->paddr));
+
 }

@@ -19,6 +19,7 @@ typedef struct
     char name[32];
     char author[32];
     char copyright[32];
+#if 0
     union
     {
         struct
@@ -33,6 +34,7 @@ typedef struct
             uint8_t *data;
         } PACKED sidv2;
     } PACKED data;
+#endif
 } PACKED sid_header;
 
 #define MIN_FILE_LENGTH 0x76
@@ -51,4 +53,5 @@ void showsid(const uint8_t *buffer, const int size)
     printf("Copyright:       %s\n", header->copyright);
     printf("Number of songs: %d\n", ntohs(header->songs));
     printf("Default song:    %d\n", ntohs(header->dsong));
+    printf("Speed:           %sHz\n", (ntohl(header->speed) == 0) ? "50" : "60");
 }

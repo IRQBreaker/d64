@@ -82,7 +82,7 @@ const char *type[] = {
     "Unknown"
 };
 
-void showcrt(const uint8_t *buffer, const int size)
+void crt(const uint8_t *buffer, const int size)
 {
     cartridge *crt = (cartridge*)&buffer[0];
 

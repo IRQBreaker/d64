@@ -11,7 +11,7 @@
 #define HIGH 202
 
 /* CBM Basic 2.0 statements */
-const char *basic[] = {
+const char *keywords[] = {
     "end",     "for",    "next",   "data",
     "input#",  "input",  "dim",    "read",
     "let",     "goto",   "run",    "if",
@@ -33,7 +33,7 @@ const char *basic[] = {
     "left$",   "right$", "mid$",   "unknown"
 };
 
-void showbasic(const uint8_t *buffer, const int size)
+void basic(const uint8_t *buffer, const int size)
 {
     // Get loading address and advance index
     uint16_t address = buffer[0] + ((buffer[1] & 0xff) << 8);
@@ -71,7 +71,7 @@ void showbasic(const uint8_t *buffer, const int size)
               quote ^= input;
 
             if (quote == 0 && ((input >= LOW) && (input <= HIGH)))
-                printf("%s", basic[input-LOW]);
+                printf("%s", keywords[input-LOW]);
             else
                 printf("%c", isprint(pet_asc[input]) ? pet_asc[input] : ' ');
         }

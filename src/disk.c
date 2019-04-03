@@ -114,7 +114,7 @@ static int validate_disk(const int filesize)
     return 1;
 }
 
-void showdisk(const uint8_t *buffer, const int size)
+void disk(const uint8_t *buffer, const int size)
 {
     if (!validate_disk(size)) {
         fprintf(stderr, "Not a valid D64 disk image\n");

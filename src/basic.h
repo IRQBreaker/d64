@@ -2,4 +2,4 @@
 
 #include <stdint.h>
 
-void showbasic(const uint8_t *buffer, const int size);
+void basic(const uint8_t *buffer, const int size);

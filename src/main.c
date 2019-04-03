@@ -120,19 +120,19 @@ int main(int argc, char **argv)
     else {
         switch (get_filetype(buffer, argv[optind])) {
             case D64:
-                showdisk(buffer, st.st_size);
+                disk(buffer, st.st_size);
                 break;
 
             case BAS:
-                showbasic(buffer, st.st_size);
+                basic(buffer, st.st_size);
                 break;
 
             case SID:
-                showsid(buffer, st.st_size);
+                sid(buffer, st.st_size);
                 break;
 
             case CRT:
-                showcrt(buffer, st.st_size);
+                crt(buffer, st.st_size);
                 break;
 
             case PRG:

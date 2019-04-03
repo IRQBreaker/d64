@@ -2,4 +2,4 @@
 
 #include <stdint.h>
 
-void showdisk(const uint8_t *buffer, const int size);
+void disk(const uint8_t *buffer, const int size);

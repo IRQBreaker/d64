@@ -2,4 +2,4 @@
 
 #include <stdint.h>
 
-void showsid(const uint8_t *buffer, const int size);
+void sid(const uint8_t *buffer, const int size);

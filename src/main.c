@@ -2,6 +2,7 @@
 #include "disasm.h"
 #include "basic.h"
 #include "sid.h"
+#include "crt.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +17,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-typedef enum {BIN, D64, BAS, SID} filetype;
+typedef enum {PRG, D64, BAS, SID, CRT} filetype;
 
 static void printhelp(char *program)
 {
@@ -31,7 +32,7 @@ static filetype get_filetype(const uint8_t *buffer, const char *filename)
 {
     // Not enough to determine file type
     if (strlen(filename) < 4)
-        return BIN;
+        return PRG;
 
     // D64 disk image
     if ((!strncmp(&filename[strlen(filename) - 3], "d64", 3) ||
@@ -43,11 +44,16 @@ static filetype get_filetype(const uint8_t *buffer, const char *filename)
             !strncmp(&filename[strlen(filename) - 3], "SID", 3)))
         return SID;
 
+    // CRT file
+    if ((!strncmp(&filename[strlen(filename) - 3], "crt", 3) ||
+            !strncmp(&filename[strlen(filename) - 3], "CRT", 3)))
+        return CRT;
+
     // C64 basic
     if (buffer[0] == 0x01 && buffer[1] == 0x08)
       return BAS;
 
-    return BIN;
+    return PRG;
 }
 
 int main(int argc, char **argv)
@@ -125,7 +131,11 @@ int main(int argc, char **argv)
                 showsid(buffer, st.st_size);
                 break;
 
-            case BIN:
+            case CRT:
+                showcrt(buffer, st.st_size);
+                break;
+
+            case PRG:
             default:
                 disasm(buffer, st.st_size, address, optillegal);
                 break;

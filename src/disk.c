@@ -77,8 +77,6 @@ const int sector_start[] = {
     580, 598, 615, 632, 649, 666, 683, 700, 717, 734, 751
 };
 
-const char *file_type[] = {"del", "seq", "prg", "usr", "rel", "???"};
-
 static int memory_offset(const track_sector *ts)
 {
     return (ts->sector + sector_start[ts->track - 1]) * 256;
@@ -161,7 +159,7 @@ void disk(const uint8_t *buffer, const int size)
                 // Actual filetype is the last three bits
                 int ftype = de->filetype & ((1 << 3) - 1);
                 if (ftype > 4)
-                    ftype = (sizeof(file_type) / sizeof(file_type[0])) - 1;
+                    ftype = (sizeof(*file_type) / sizeof(*file_type[0])) - 1;
 
                 printf("  %-3s (0x%02X), %3d sectors, %6d bytes",
                         file_type[ftype], de->filetype, file_sector_size(de), file_size(de));

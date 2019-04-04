@@ -57,14 +57,26 @@ void t64(const uint8_t *buffer, const int size)
         printf("%c", (isprint(tape->user_des[i])) ? tape->user_des[i] : ' ');
     printf("\n");
 
+    int type_size = sizeof(types) / sizeof(types[0]);
     int index = FILE_RECORD_OFFSET;
     file_record *file = (file_record*)&buffer[index];
 
     printf("Contents:\n");
     for (int i = 1; i <= tape->used; i++) {
         for (int j = 0; j < FNAME_LEN; j++)
-            printf("%c", file->fname[j]);
+            printf("%c", (isprint(file->fname[j])) ? file->fname[j] : ' ');
+
+        int cft = file->ftype & ((1 << 3) - 1);
+        if (cft > 4)
+            cft = (sizeof(*file_type) / sizeof(*file_type[0])) - 1;
+
+        printf("  %s", file_type[cft]);
+        printf("  %s", (file->type >= type_size) ?
+                types[type_size - 1] : types[file->type]);
+
+        printf("  0x%04x - 0x%04x", file->start_addr, file->end_addr);
         printf("\n");
+
         index += sizeof(file_record);
         file = (file_record*)&buffer[index];
     }

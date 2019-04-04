@@ -3,6 +3,7 @@
 #include "basic.h"
 #include "sid.h"
 #include "crt.h"
+#include "t64.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,7 +18,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-typedef enum {PRG, D64, BAS, SID, CRT} filetype;
+typedef enum {PRG, D64, BAS, SID, CRT, T64} filetype;
 
 static void printhelp(char *program)
 {
@@ -34,22 +35,22 @@ static filetype get_filetype(const uint8_t *buffer, const char *filename)
     if (strlen(filename) < 4)
         return PRG;
 
-    // D64 disk image
     if ((!strncmp(&filename[strlen(filename) - 3], "d64", 3) ||
             !strncmp(&filename[strlen(filename) - 3], "D64", 3)))
         return D64;
 
-    // SID file
     if ((!strncmp(&filename[strlen(filename) - 3], "sid", 3) ||
             !strncmp(&filename[strlen(filename) - 3], "SID", 3)))
         return SID;
 
-    // CRT file
     if ((!strncmp(&filename[strlen(filename) - 3], "crt", 3) ||
             !strncmp(&filename[strlen(filename) - 3], "CRT", 3)))
         return CRT;
 
-    // C64 basic
+    if ((!strncmp(&filename[strlen(filename) - 3], "t64", 3) ||
+            !strncmp(&filename[strlen(filename) - 3], "T64", 3)))
+        return T64;
+
     if (buffer[0] == 0x01 && buffer[1] == 0x08)
       return BAS;
 
@@ -133,6 +134,10 @@ int main(int argc, char **argv)
 
             case CRT:
                 crt(buffer, st.st_size);
+                break;
+
+            case T64:
+                t64(buffer, st.st_size);
                 break;
 
             case PRG:

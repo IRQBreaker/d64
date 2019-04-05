@@ -68,9 +68,9 @@ void t64(const uint8_t *buffer, const int size)
 
         int cft = file->ftype & ((1 << 3) - 1);
         if (cft > 4)
-            cft = (sizeof(*file_type) / sizeof(*file_type[0])) - 1;
+            cft = c64_file_type_size - 1;
 
-        printf("  %s", file_type[cft]);
+        printf("  %s", c64_file_type[cft]);
         printf("  %s", (file->type >= type_size) ?
                 types[type_size - 1] : types[file->type]);
 

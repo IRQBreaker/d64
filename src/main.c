@@ -18,7 +18,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-typedef enum {PRG, D64, BAS, SID, CRT, T64} filetype;
+typedef enum {BIN, D64, BAS, SID, CRT, T64} filetype;
 
 static void printhelp(char *program)
 {
@@ -33,7 +33,7 @@ static filetype get_filetype(const uint8_t *buffer, const char *filename)
 {
     // Not enough to determine file type
     if (strlen(filename) < 4)
-        return PRG;
+        return BIN;
 
     if ((!strncmp(&filename[strlen(filename) - 3], "d64", 3) ||
             !strncmp(&filename[strlen(filename) - 3], "D64", 3)))
@@ -54,7 +54,7 @@ static filetype get_filetype(const uint8_t *buffer, const char *filename)
     if (buffer[0] == 0x01 && buffer[1] == 0x08)
       return BAS;
 
-    return PRG;
+    return BIN;
 }
 
 int main(int argc, char **argv)
@@ -140,7 +140,7 @@ int main(int argc, char **argv)
                 t64(buffer, st.st_size);
                 break;
 
-            case PRG:
+            case BIN:
             default:
                 disasm(buffer, st.st_size, address, optillegal);
                 break;

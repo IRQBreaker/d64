@@ -159,10 +159,11 @@ void disk(const uint8_t *buffer, const int size)
                 // Actual filetype is the last three bits
                 int ftype = de->filetype & ((1 << 3) - 1);
                 if (ftype > 4)
-                    ftype = (sizeof(*file_type) / sizeof(*file_type[0])) - 1;
+                    ftype =  c64_file_type_size - 1;
 
                 printf("  %-3s (0x%02X), %3d sectors, %6d bytes",
-                        file_type[ftype], de->filetype, file_sector_size(de), file_size(de));
+                        c64_file_type[ftype], de->filetype,
+                        file_sector_size(de), file_size(de));
                 printf(" (%02d,%02d)\n", de->filetrack, de->filesector);
             }
         }

@@ -20,4 +20,5 @@ const uint8_t pet_asc[256] = {
     0xb0,0xb1,0xb2,0xb3,0xb4,0xb5,0xb6,0xb7,0xb8,0xb9,0xba,0xbb,0xbc,0xbd,0xbe,0xbf
 };
 
-const char *file_type[] = {"del", "seq", "prg", "usr", "rel", "???"};
+const char *c64_file_type[] = {"del", "seq", "prg", "usr", "rel", "???"};
+const int c64_file_type_size = sizeof(c64_file_type) / sizeof(c64_file_type[0]);

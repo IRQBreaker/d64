@@ -9,7 +9,6 @@
 #define USER_DES_LEN 24
 #define FNAME_LEN 16
 #define MIN_SIZE 86
-#define FILE_RECORD_OFFSET 64
 
 typedef struct
 {
@@ -34,13 +33,13 @@ typedef struct
 } PACKED file_record;
 
 const char *types[] = {
-    "free entry",
-    "normal tape file",
-    "tape file with header",
-    "memory snapshot v0.9, uncompressed",
-    "tape block",
-    "digitized stream",
-    "unknown"
+    "Free entry",
+    "Normal tape file",
+    "Tape file with header",
+    "Memory snapshot v0.9, uncompressed",
+    "Tape block",
+    "Digitized stream",
+    "Unknown"
 };
 
 void t64(const uint8_t *buffer, const int size)
@@ -58,7 +57,7 @@ void t64(const uint8_t *buffer, const int size)
     printf("\n");
 
     int type_size = sizeof(types) / sizeof(types[0]);
-    int index = FILE_RECORD_OFFSET;
+    int index = sizeof(tape_record);
 
     printf("Contents:\n");
     for (int i = 0; i < tape->used; i++) {

@@ -120,9 +120,8 @@ void disk(const uint8_t *buffer, const int size)
     }
 
     track_sector ts = {.track = 18, .sector = 0};
-    int offset = memory_offset(&ts);
 
-    bam_block *bam = (bam_block*)(&buffer[offset]);
+    bam_block *bam = (bam_block*)(&buffer[memory_offset(&ts)]);
 
     int free_sectors = 0;
     for (int i=0; i < BAM_NO_OF_ENTRIES; i++)
@@ -143,8 +142,7 @@ void disk(const uint8_t *buffer, const int size)
 
     // Files
     ts.sector = 1;
-    offset = memory_offset(&ts);
-    dir_sector *ds = (dir_sector*)(&buffer[offset]);
+    dir_sector *ds = (dir_sector*)(&buffer[memory_offset(&ts)]);
 
     int valid = 1;
     while (valid) {
@@ -169,8 +167,7 @@ void disk(const uint8_t *buffer, const int size)
         }
 
         if (next_dir_ts(ds, &ts)) {
-            offset = memory_offset(&ts);
-            ds = (dir_sector*)(&buffer[offset]);
+            ds = (dir_sector*)(&buffer[memory_offset(&ts)]);
         } else
             valid = 0;
     }

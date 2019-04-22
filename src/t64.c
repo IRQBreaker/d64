@@ -66,11 +66,7 @@ void t64(const uint8_t *buffer, const int size)
         for (int j = 0; j < FNAME_LEN; j++)
             printf("%c", (isprint(file->fname[j])) ? file->fname[j] : ' ');
 
-        int cft = file->ftype & ((1 << 3) - 1);
-        if (cft > 4)
-            cft = c64_file_type_size - 1;
-
-        printf("  %s", c64_file_type[cft]);
+        printf("  %s", get_filetype(file->ftype));
         printf("  %s", (file->type >= type_size) ?
                 types[type_size - 1] : types[file->type]);
 

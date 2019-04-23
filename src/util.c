@@ -21,14 +21,13 @@ const uint8_t pet_asc[256] = {
 };
 
 const char *c64_file_type[] = {"del", "seq", "prg", "usr", "rel", "???"};
-const int c64_file_type_size = sizeof(c64_file_type) / sizeof(c64_file_type[0]);
 
 const char *get_filetype(int ftype)
 {
-
+    // Actual filetype is specfied by the last three bits
     int xtype = ftype & ((1 << 3) - 1);
     if (xtype > 4)
-        xtype =  c64_file_type_size - 1;
+        xtype =  (sizeof(c64_file_type) / sizeof(c64_file_type[0])) - 1;
 
     return c64_file_type[xtype];
 }

@@ -17,6 +17,19 @@ typedef struct
     char name[32];
 } PACKED cartridge;
 
+#define FIRST_CHIP 0x40
+
+typedef struct
+{
+    char signature[4];
+    uint32_t plen;
+    uint16_t ctype;
+    uint16_t bank;
+    uint16_t loadaddr;
+    uint16_t size;
+    uint8_t *data;
+} PACKED chip;
+
 const char *type[] = {
     "Normal cartridge",
     "Action Replay",
@@ -84,10 +97,16 @@ const char *type[] = {
 
 void crt(const uint8_t *buffer, const int size)
 {
-    cartridge *crt = (cartridge*)&buffer[0];
+    if (size < (int)(sizeof(cartridge) + sizeof(chip))) {
+        fprintf(stderr, "Not a valid cartridge image.\n");
+        return;
+    }
 
-    if (size < (int)sizeof(cartridge) ||
-            strncmp(crt->signature, "C64 CARTRIDGE", 13) != 0) {
+    cartridge *crt = (cartridge*)&buffer[0];
+    chip *ch = (chip*)&buffer[FIRST_CHIP];
+
+    if (strncmp(crt->signature, "C64 CARTRIDGE", 13) != 0 ||
+            strncmp(ch->signature, "CHIP", 4) != 0) {
         fprintf(stderr, "Not a valid cartridge image.\n");
         return;
     }
@@ -97,4 +116,22 @@ void crt(const uint8_t *buffer, const int size)
     int tsize = sizeof(type) / sizeof(type[0]);
     printf("Type: %s\n", (ntohs(crt->hwtype) > tsize) ?
             type[tsize - 1] : type[ntohs(crt->hwtype)]);
+
+    printf("Total packet length: %d\n", ntohl(ch->plen));
+    printf("Chip type: ");
+    switch (ch->ctype) {
+        case 2:
+            printf("Flash ROM");
+            break;
+        case 1:
+            printf("RAM, no ROM data");
+            break;
+        case 0:
+        default:
+            printf("ROM");
+            break;
+    }
+    printf("\nBank number: %d\n", ntohs(ch->bank));
+    printf("Load address: %d\n", ntohs(ch->loadaddr));
+    printf("ROM image size: %d\n", ntohs(ch->size));
 }

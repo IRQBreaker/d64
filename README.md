@@ -1,6 +1,11 @@
-# d64
+# D64
 
-A simple 6502 disassembler, basic lister, display SID file information, show cartridge information and show D64 disk image contents.
+* 6502 disassembler
+* C64 basic V2.0 lister
+* show SID file information
+* show cartridge information
+* show T64 image contents
+* show D64 image contents
 
 How to build:
 ```

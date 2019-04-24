@@ -17,8 +17,6 @@ typedef struct
     char name[32];
 } PACKED cartridge;
 
-#define FIRST_CHIP 0x40
-
 typedef struct
 {
     char signature[4];
@@ -103,7 +101,7 @@ void crt(const uint8_t *buffer, const int size)
     }
 
     cartridge *crt = (cartridge*)&buffer[0];
-    chip *ch = (chip*)&buffer[FIRST_CHIP];
+    chip *ch = (chip*)&buffer[ntohl(crt->fhlen)];
 
     if (strncmp(crt->signature, "C64 CARTRIDGE", 13) != 0 ||
             strncmp(ch->signature, "CHIP", 4) != 0) {

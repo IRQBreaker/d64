@@ -40,6 +40,8 @@ void pxx(const uint8_t *buffer, const int size)
     printf("   $%04x - $%04lx\n", startaddr,
         (size - sizeof(pheader)) - startaddr);
 
-    printf("\nListing:\n");
-    basic(data, size - sizeof(pheader));
+    if (p->rel_size == 0) {
+        printf("\nListing:\n");
+        basic(data, size - sizeof(pheader));
+    }
 }

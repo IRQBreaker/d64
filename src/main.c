@@ -4,6 +4,7 @@
 #include "sid.h"
 #include "crt.h"
 #include "t64.h"
+#include "pxx.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +19,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-typedef enum {BIN, D64, BAS, SID, CRT, T64} filetype;
+typedef enum {BIN, D64, BAS, SID, CRT, T64, PXX} filetype;
 
 static void printhelp(char *program)
 {
@@ -50,6 +51,13 @@ static filetype get_filetype(const uint8_t *buffer, const char *filename)
     if ((!strncmp(&filename[strlen(filename) - 3], "t64", 3) ||
             !strncmp(&filename[strlen(filename) - 3], "T64", 3)))
         return T64;
+
+    if ((!strncmp(&filename[strlen(filename) - 3], "p", 1) ||
+          !strncmp(&filename[strlen(filename) - 3], "P", 1))) {
+        int num = atoi(&filename[strlen(filename) - 2]);
+        if (num > 0 || num < 100)
+            return PXX;
+    }
 
     if (buffer[0] == 0x01 && buffer[1] == 0x08)
       return BAS;
@@ -138,6 +146,10 @@ int main(int argc, char **argv)
 
             case T64:
                 t64(buffer, st.st_size);
+                break;
+
+            case PXX:
+                pxx(buffer, st.st_size);
                 break;
 
             case BIN:

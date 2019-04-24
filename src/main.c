@@ -55,7 +55,7 @@ static filetype get_filetype(const uint8_t *buffer, const char *filename)
     if ((!strncmp(&filename[strlen(filename) - 3], "p", 1) ||
           !strncmp(&filename[strlen(filename) - 3], "P", 1))) {
         int num = atoi(&filename[strlen(filename) - 2]);
-        if (num > 0 || num < 100)
+        if (num >= 0 && num <= 99)
             return PXX;
     }
 

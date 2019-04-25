@@ -35,7 +35,7 @@ void pxx(const uint8_t *buffer, const int size)
             pet_asc[p->filename[i]] : ' ');
 
     uint8_t *data = (uint8_t *)&buffer[sizeof(pheader)];
-    uint16_t startaddr = data[0] + (data[1] << 8);
+    uint16_t startaddr = data[0] + ((data[1] & 0xff)<< 8);
 
     printf("   $%04x - $%04lx\n", startaddr,
         (size - sizeof(pheader)) - startaddr);

@@ -77,6 +77,13 @@ const int sector_start[] = {
     580, 598, 615, 632, 649, 666, 683, 700, 717, 734, 751
 };
 
+const int sectors[] = {
+    21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21,
+    19, 19, 19, 19, 19, 19, 19,
+    18, 18, 18, 18, 18, 18,
+    17, 17, 17, 17, 17
+};
+
 static int memory_offset(const track_sector *ts)
 {
     return (ts->sector + sector_start[ts->track - 1]) * 256;
@@ -112,8 +119,10 @@ static int validate_disk(const int filesize)
     return 1;
 }
 
-void disk(const uint8_t *buffer, const int size)
+void disk(const uint8_t *buffer, const int size, const int bitmap)
 {
+    (void)bitmap;
+
     if (!validate_disk(size)) {
         fprintf(stderr, "Not a valid D64 disk image\n");
         return;
@@ -123,6 +132,26 @@ void disk(const uint8_t *buffer, const int size)
 
     bam_block *bam = (bam_block*)(&buffer[memory_offset(&ts)]);
 
+    if (bitmap) {
+        for (int i=0; i < BAM_NO_OF_ENTRIES; i++) {
+            int x = bam->bam_entries[i].bitmap[0];
+            int y = bam->bam_entries[i].bitmap[1];
+            int z = bam->bam_entries[i].bitmap[2];
+            for (int j=0; j < 8; j++) {
+                printf("%c", ((x >> j) & 0x01) ? '.' : '*');
+            }
+            printf(" ");
+            for (int j=0; j < 8; j++) {
+                printf("%c", ((y >> j) & 0x01) ? '.' : '*');
+            }
+            printf(" ");
+            for (int j=0; j < 8; j++) {
+                printf("%c", ((z >> j) & 0x01) ? '.' : '*');
+            }
+            printf(" %02x %02x %02x\n", x, y, z);
+        }
+    }
+
     int free_sectors = 0;
     for (int i=0; i < BAM_NO_OF_ENTRIES; i++)
         free_sectors += bam->bam_entries[i].free_sectors;
@@ -131,13 +160,13 @@ void disk(const uint8_t *buffer, const int size)
     printf("\"");
     for (int i=0; i < BAM_DISKNAME_LENGTH; i++)
         printf( "%c", isprint(pet_asc[bam->diskname[i]]) ?
-            pet_asc[bam->diskname[i]] : ' ');
+                pet_asc[bam->diskname[i]] : ' ');
     printf("\"");
 
     // Disk id
     for (int i=0; i < BAM_DISKINFO_LENGTH; i++)
         printf( "%c", isprint(pet_asc[bam->diskinfo[i]]) ?
-            pet_asc[bam->diskinfo[i]] : ' ');
+                pet_asc[bam->diskinfo[i]] : ' ');
     printf("\n");
 
     // Files
@@ -152,7 +181,7 @@ void disk(const uint8_t *buffer, const int size)
             if (de->filetype) {
                 for (int j=0; j < FILENAME_LENGTH; j++)
                     printf( "%c", isprint(pet_asc[de->filename[j]]) ?
-                        pet_asc[de->filename[j]] : ' ');
+                            pet_asc[de->filename[j]] : ' ');
 
                 printf("  %-3s (0x%02X), %3d sectors, %6d bytes",
                         get_filetype(de->filetype), de->filetype,

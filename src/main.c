@@ -37,28 +37,28 @@ static filetype get_filetype(const uint8_t *buffer, const char *filename)
         return BIN;
 
     // D64
-    if ((!strncmp(&filename[strlen(filename) - 3], "d64", 3) ||
-            !strncmp(&filename[strlen(filename) - 3], "D64", 3)))
+    if ((strncmp(&filename[strlen(filename) - 3], "d64", 3) == 0 ||
+            strncmp(&filename[strlen(filename) - 3], "D64", 3) == 0))
         return D64;
 
     // SID
-    if ((!strncmp(&filename[strlen(filename) - 3], "sid", 3) ||
-            !strncmp(&filename[strlen(filename) - 3], "SID", 3)))
+    if ((strncmp(&filename[strlen(filename) - 3], "sid", 3) == 0 ||
+            strncmp(&filename[strlen(filename) - 3], "SID", 3) == 0))
         return SID;
 
     // CRT
-    if ((!strncmp(&filename[strlen(filename) - 3], "crt", 3) ||
-            !strncmp(&filename[strlen(filename) - 3], "CRT", 3)))
+    if ((strncmp(&filename[strlen(filename) - 3], "crt", 3) == 0 ||
+            strncmp(&filename[strlen(filename) - 3], "CRT", 3) == 0))
         return CRT;
 
     // T64
-    if ((!strncmp(&filename[strlen(filename) - 3], "t64", 3) ||
-            !strncmp(&filename[strlen(filename) - 3], "T64", 3)))
+    if ((strncmp(&filename[strlen(filename) - 3], "t64", 3) == 0 ||
+            strncmp(&filename[strlen(filename) - 3], "T64", 3) == 0))
         return T64;
 
     // PXX
-    if ((!strncmp(&filename[strlen(filename) - 3], "p", 1) ||
-          !strncmp(&filename[strlen(filename) - 3], "P", 1))) {
+    if ((strncmp(&filename[strlen(filename) - 3], "p", 1) == 0 ||
+          strncmp(&filename[strlen(filename) - 3], "P", 1) == 0)) {
 
         char *end;
         char *str = (char*)&filename[strlen(filename) - 2];

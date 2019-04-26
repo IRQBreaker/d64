@@ -2,4 +2,4 @@
 
 #include <stdint.h>
 
-void disk(const uint8_t *buffer, const int size, const int bitmap);
+void disk(const uint8_t *buffer, const int size, const int baminfo);

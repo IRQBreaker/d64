@@ -27,7 +27,7 @@ static void printhelp(char *program)
         "  -a address  disassemble from address\n" \
         "  -f          force disassembly\n" \
         "  -i          show illegal opcodes\n" \
-        "  -b          show disk bitmap\n" \
+        "  -b          show disk BAM\n" \
         "  -h          this help text\n", basename(program));
 }
 
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 {
     int optforce = 0;
     int optillegal = 0;
-    int optbitmap = 0;
+    int optbam = 0;
     uint16_t address = UINT16_MAX;
     char c;
     char *end;
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
                 break;
 
             case 'b':
-                optbitmap = 1;
+                optbam = 1;
                 break;
 
             case 'h':
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
     else {
         switch (get_filetype(buffer, argv[optind])) {
             case D64:
-                disk(buffer, st.st_size, optbitmap);
+                disk(buffer, st.st_size, optbam);
                 break;
 
             case BAS:

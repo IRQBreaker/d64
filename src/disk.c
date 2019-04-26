@@ -119,10 +119,8 @@ static int validate_disk(const int filesize)
     return 1;
 }
 
-void disk(const uint8_t *buffer, const int size, const int bitmap)
+void disk(const uint8_t *buffer, const int size, const int baminfo)
 {
-    (void)bitmap;
-
     if (!validate_disk(size)) {
         fprintf(stderr, "Not a valid D64 disk image\n");
         return;
@@ -132,24 +130,27 @@ void disk(const uint8_t *buffer, const int size, const int bitmap)
 
     bam_block *bam = (bam_block*)(&buffer[memory_offset(&ts)]);
 
-    if (bitmap) {
+    if (baminfo) {
+        printf("BAM contents:\n");
         for (int i=0; i < BAM_NO_OF_ENTRIES; i++) {
+            char bstring[25] = {0};
             int x = bam->bam_entries[i].bitmap[0];
             int y = bam->bam_entries[i].bitmap[1];
             int z = bam->bam_entries[i].bitmap[2];
+
             for (int j=0; j < 8; j++) {
-                printf("%c", ((x >> j) & 0x01) ? '.' : '*');
+                bstring[j] = ((x >> j) & 0x01) ? '.' : '*';
+                bstring[j + 8] = ((y >> j) & 0x01) ? '.' : '*';
+                bstring[j + 16] = ((z >> j) & 0x01) ? '.' : '*';
             }
-            printf(" ");
-            for (int j=0; j < 8; j++) {
-                printf("%c", ((y >> j) & 0x01) ? '.' : '*');
+
+            printf("Track %02d: ", i + 1);
+            for (int k=0; k < sectors[i]; k++) {
+                printf("%c", bstring[k]);
             }
-            printf(" ");
-            for (int j=0; j < 8; j++) {
-                printf("%c", ((z >> j) & 0x01) ? '.' : '*');
-            }
-            printf(" %02x %02x %02x\n", x, y, z);
+            printf("\n");
         }
+        printf("\n");
     }
 
     int free_sectors = 0;

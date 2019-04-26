@@ -134,14 +134,14 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
         printf("BAM contents:\n");
         for (int i=0; i < BAM_NO_OF_ENTRIES; i++) {
             char bstring[25] = {0};
-            int x = bam->bam_entries[i].bitmap[0];
-            int y = bam->bam_entries[i].bitmap[1];
-            int z = bam->bam_entries[i].bitmap[2];
 
             for (int j=0; j < 8; j++) {
-                bstring[j] = ((x >> j) & 0x01) ? '.' : '*';
-                bstring[j + 8] = ((y >> j) & 0x01) ? '.' : '*';
-                bstring[j + 16] = ((z >> j) & 0x01) ? '.' : '*';
+                bstring[j] =
+                    ((bam->bam_entries[i].bitmap[0] >> j) & 0x01) ? '.' : '*';
+                bstring[j + 8] =
+                    ((bam->bam_entries[i].bitmap[1] >> j) & 0x01) ? '.' : '*';
+                bstring[j + 16] =
+                    ((bam->bam_entries[i].bitmap[2] >> j) & 0x01) ? '.' : '*';
             }
 
             printf("Track %02d: ", i + 1);

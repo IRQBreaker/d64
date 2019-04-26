@@ -56,8 +56,7 @@ typedef struct
 {
     track_sector next_dir_entry;
     uint8_t filetype;
-    uint8_t filetrack;
-    uint8_t filesector;
+    track_sector file;
     uint8_t filename[FILENAME_LENGTH];
     track_sector rel_file;
     uint8_t rel_lenght;
@@ -187,7 +186,7 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
                 printf("  %-3s (0x%02X), %3d sectors, %6d bytes",
                         get_filetype(de->filetype), de->filetype,
                         file_sector_size(de), file_size(de));
-                printf(" (%02d,%02d)\n", de->filetrack, de->filesector);
+                printf(" (%02d,%02d)\n", de->file.track, de->file.sector);
             }
         }
 

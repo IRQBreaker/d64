@@ -93,11 +93,6 @@ static int file_sector_size(const dir_entry *de)
     return de->fs_sizel + (de->fs_sizeh * 256);
 }
 
-static int file_size(const dir_entry *de)
-{
-    return file_sector_size(de) * 254;
-}
-
 static int next_dir_ts(const dir_sector *ds, track_sector *ts)
 {
     if (ds->dentry[0].next_dir_entry.track == 0)
@@ -152,10 +147,6 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
         printf("\n");
     }
 
-    int free_sectors = 0;
-    for (int i=0; i < BAM_NO_OF_ENTRIES; i++)
-        free_sectors += bam->bam_entries[i].free_sectors;
-
     // Disk name
     printf("\"");
     for (int i=0; i < BAM_DISKNAME_LENGTH; i++)
@@ -172,10 +163,12 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
     // Files
     ts.sector = 1;
     dir_sector *ds = (dir_sector*)(&buffer[memory_offset(&ts)]);
-
+    int free_sectors = 0;
     int valid = 1;
+
     while (valid) {
         for (int i=0; i < NO_OF_DIRENTRY_PER_SECTOR; i++) {
+            free_sectors += bam->bam_entries[i].free_sectors;
             dir_entry *de = (dir_entry*)(&ds->dentry[i]);
 
             if (de->filetype) {
@@ -183,16 +176,35 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
                     printf( "%c", isprint(pet_asc[de->filename[j]]) ?
                             pet_asc[de->filename[j]] : ' ');
 
+                track_sector fts =
+                      {.track = de->file.track, .sector = de->file.sector};
+
+                // Follow track/sector link to end of file
+                int cont = 1;
+                uint16_t cur_file = 0;
+                while (cont) {
+                    uint8_t *fentry = (uint8_t*)&buffer[memory_offset(&fts)];
+                    fts.track = fentry[0];
+                    fts.sector = fentry[1];
+
+                    if (fts.track == 0) {
+                        cur_file += fts.sector;
+                        cont = 0;
+                    } else {
+                        cur_file += 254;
+                    }
+                }
+
                 printf("  %-3s (0x%02X), %3d sectors, %6d bytes",
                         get_filetype(de->filetype), de->filetype,
-                        file_sector_size(de), file_size(de));
+                        file_sector_size(de), cur_file);
                 printf(" (%02d,%02d)\n", de->file.track, de->file.sector);
             }
         }
 
-        if (next_dir_ts(ds, &ts)) {
+        if (next_dir_ts(ds, &ts))
             ds = (dir_sector*)(&buffer[memory_offset(&ts)]);
-        } else
+        else
             valid = 0;
     }
 

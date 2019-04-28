@@ -90,7 +90,7 @@ static int memory_offset(const track_sector *ts)
 
 static int file_sector_size(const dir_entry *de)
 {
-    return de->fs_sizel + (de->fs_sizeh * 256);
+    return (int)(de->fs_sizel + ((de->fs_sizeh & 0xff) << 8));
 }
 
 static int next_dir_ts(const dir_sector *ds, track_sector *ts)
@@ -180,8 +180,8 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
                       {.track = de->file.track, .sector = de->file.sector};
 
                 // Follow track/sector link to end of file
+                size_t cur_file = 0;
                 int cont = 1;
-                uint16_t cur_file = 0;
                 while (cont) {
                     uint8_t *fentry = (uint8_t*)&buffer[memory_offset(&fts)];
                     fts.track = fentry[0];
@@ -190,12 +190,11 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
                     if (fts.track == 0) {
                         cur_file += fts.sector;
                         cont = 0;
-                    } else {
+                    } else
                         cur_file += 254;
-                    }
                 }
 
-                printf("  %-3s (0x%02X), %3d sectors, %6d bytes",
+                printf("  %-3s (0x%02X), %3d sectors, %6ld bytes",
                         get_filetype(de->filetype), de->filetype,
                         file_sector_size(de), cur_file);
                 printf(" (%02d,%02d)\n", de->file.track, de->file.sector);

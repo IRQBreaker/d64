@@ -172,7 +172,7 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
             free_sectors += bam->bam_entries[i].free_sectors;
             dir_entry *de = (dir_entry*)(&ds->dentry[i]);
 
-            if (de->filetype) {
+            if (de->filetype >= 0x80) {
                 for (int j=0; j < FILENAME_LENGTH; j++)
                     printf( "%c", isprint(pet_asc[de->filename[j]]) ?
                             pet_asc[de->filename[j]] : ' ');

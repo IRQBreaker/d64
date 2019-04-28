@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 
 #define SIZE_35_TRACK             174848
 #define SIZE_35_TRACK_ERROR       175531
@@ -176,22 +177,24 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
                     printf( "%c", isprint(pet_asc[de->filename[j]]) ?
                             pet_asc[de->filename[j]] : ' ');
 
-                track_sector fts =
-                      {.track = de->file.track, .sector = de->file.sector};
-
-                // Follow track/sector link to end of file
                 size_t cur_file = 0;
-                int cont = 1;
-                while (cont) {
-                    uint8_t *fentry = (uint8_t*)&buffer[memory_offset(&fts)];
-                    fts.track = fentry[0];
-                    fts.sector = fentry[1];
+                if (strncmp(get_filetype(de->filetype), "prg", 3) == 0 ||
+                    strncmp(get_filetype(de->filetype), "seq", 3) == 0) {
+                    // Follow track/sector link to end of file
+                    track_sector fts =
+                          {.track = de->file.track, .sector = de->file.sector};
+                    int cont = 1;
+                    while (cont) {
+                        uint8_t *fentry = (uint8_t*)&buffer[memory_offset(&fts)];
+                        fts.track = fentry[0];
+                        fts.sector = fentry[1];
 
-                    if (fts.track == 0) {
-                        cur_file += fts.sector;
-                        cont = 0;
-                    } else
-                        cur_file += 254;
+                        if (fts.track == 0) {
+                            cur_file += fts.sector;
+                            cont = 0;
+                        } else
+                            cur_file += 254;
+                    }
                 }
 
                 printf("  %-3s (0x%02X), %3d sectors, %6ld bytes",

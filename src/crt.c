@@ -48,7 +48,7 @@ const char *type[] = {
     "Warpspeed",
     "Dinamic",
     "Zaxxon, Super Zaxxon (SEGA)",
-    "Magic Desk, DOmark, HES Australia",
+    "Magic Desk, Domark, HES Australia",
     "Super Snapshot 5",
     "Comal-80",
     "Structured Basic",

@@ -3,9 +3,10 @@
 * 6502 disassembler
 * C64 basic V2.0 lister
 * show SID file information
-* show cartridge information
+* show CRT file information
 * show T64 image contents
 * show D64 image contents
+* show P00 image contents
 
 How to build:
 ```

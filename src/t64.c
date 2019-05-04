@@ -52,8 +52,10 @@ void t64(const uint8_t *buffer, const int size)
     tape_record *tape = (tape_record*)&buffer[0];
 
     printf("Name: ");
-    for (int i = 0; i < USER_DES_LEN; i++)
-        printf("%c", (isprint(tape->user_des[i])) ? tape->user_des[i] : ' ');
+    for (int i = 0; i < USER_DES_LEN; i++) {
+        char c = tape->user_des[i];
+        printf("%c", isprint(c) ? c : ' ');
+    }
     printf("\n");
 
     int type_size = sizeof(types) / sizeof(types[0]);
@@ -63,8 +65,10 @@ void t64(const uint8_t *buffer, const int size)
     for (int i = 0; i < tape->used; i++) {
         file_record *file = (file_record*)&buffer[index];
 
-        for (int j = 0; j < FNAME_LEN; j++)
-            printf("%c", (isprint(file->fname[j])) ? file->fname[j] : ' ');
+        for (int j = 0; j < FNAME_LEN; j++) {
+            char c = file->fname[j];
+            printf("%c", isprint(c) ? c : ' ');
+        }
 
         printf("  %s", get_filetype(file->ftype));
         printf("  %s", (file->type >= type_size) ?

@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-/* Addressing modes */
+// Addressing modes
 enum {
     IMPLIED,      // RTS
     IMMEDIATE,    // LDA #$00
@@ -27,7 +27,7 @@ typedef struct
     int type;
 } mnemonics;
 
-/* name, type */
+// name, type
 const mnemonics mne_legal[] = {
     {"brk", IMPLIED},    {"ora", INDIRECT_X}, {"???", IMPLIED},    {"???", IMPLIED},
     {"???", IMPLIED},    {"ora", ZEROPAGE},   {"asl", ZEROPAGE},   {"???", IMPLIED},
@@ -95,7 +95,7 @@ const mnemonics mne_legal[] = {
     {"???", IMPLIED},    {"sbc", ABSOLUTE_X}, {"inc", ABSOLUTE_X}, {"???", IMPLIED}
 };
 
-/* name, type */
+// name, type
 const mnemonics mne_illegal[] = {
     {"brk", IMPLIED},    {"ora", INDIRECT_X}, {"kil", IMPLIED},    {"slo", INDIRECT_X},
     {"nop", ZEROPAGE},   {"ora", ZEROPAGE},   {"asl", ZEROPAGE},   {"slo", ZEROPAGE},

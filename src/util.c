@@ -26,6 +26,7 @@ const char *get_filetype(int ftype)
 {
     // Actual filetype is specfied by the last three bits
     int xtype = ftype & ((1 << 3) - 1);
+    // Return "???" if unknown file type
     if (xtype > 4)
         xtype =  (sizeof(c64_file_type) / sizeof(c64_file_type[0])) - 1;
 

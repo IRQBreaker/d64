@@ -33,36 +33,38 @@ static void printhelp(char *program)
 
 static filetype get_filetype(const uint8_t *buffer, const char *filename)
 {
+    int flen = strlen(filename);
+
     // Not enough to determine file type
-    if (strlen(filename) < 4)
+    if (flen < 4)
         return BIN;
 
     // D64
-    if ((strncmp(&filename[strlen(filename) - 3], "d64", 3) == 0 ||
-            strncmp(&filename[strlen(filename) - 3], "D64", 3) == 0))
+    if ((strncmp(&filename[flen - 3], "d64", 3) == 0 ||
+            strncmp(&filename[flen - 3], "D64", 3) == 0))
         return D64;
 
     // SID
-    if ((strncmp(&filename[strlen(filename) - 3], "sid", 3) == 0 ||
-            strncmp(&filename[strlen(filename) - 3], "SID", 3) == 0))
+    if ((strncmp(&filename[flen - 3], "sid", 3) == 0 ||
+            strncmp(&filename[flen - 3], "SID", 3) == 0))
         return SID;
 
     // CRT
-    if ((strncmp(&filename[strlen(filename) - 3], "crt", 3) == 0 ||
-            strncmp(&filename[strlen(filename) - 3], "CRT", 3) == 0))
+    if ((strncmp(&filename[flen - 3], "crt", 3) == 0 ||
+            strncmp(&filename[flen - 3], "CRT", 3) == 0))
         return CRT;
 
     // T64
-    if ((strncmp(&filename[strlen(filename) - 3], "t64", 3) == 0 ||
-            strncmp(&filename[strlen(filename) - 3], "T64", 3) == 0))
+    if ((strncmp(&filename[flen - 3], "t64", 3) == 0 ||
+            strncmp(&filename[flen - 3], "T64", 3) == 0))
         return T64;
 
     // PXX
-    if ((strncmp(&filename[strlen(filename) - 3], "p", 1) == 0 ||
-          strncmp(&filename[strlen(filename) - 3], "P", 1) == 0)) {
+    if ((strncmp(&filename[flen - 3], "p", 1) == 0 ||
+          strncmp(&filename[flen - 3], "P", 1) == 0)) {
 
         char *end;
-        char *str = (char*)&filename[strlen(filename) - 2];
+        char *str = (char*)&filename[flen - 2];
         long int num = strtol(str, &end, 10);
 
         if (str != end && (num >= 0 && num <= 99))

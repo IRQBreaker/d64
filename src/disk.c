@@ -130,6 +130,8 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
         for (int i=0; i < BAM_NO_OF_ENTRIES; i++) {
             char bstring[25] = {0};
 
+            // . = free
+            // * = used
             for (int j=0; j < 8; j++) {
                 bstring[j] =
                     ((bam->bam_entries[i].bitmap[0] >> j) & 0x01) ? '.' : '*';
@@ -150,15 +152,17 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
 
     // Disk name
     printf("\"");
-    for (int i=0; i < BAM_DISKNAME_LENGTH; i++)
-        printf( "%c", isprint(pet_asc[bam->diskname[i]]) ?
-                pet_asc[bam->diskname[i]] : ' ');
+    for (int i=0; i < BAM_DISKNAME_LENGTH; i++) {
+        uint8_t c = pet_asc[bam->diskname[i]];
+        printf("%c", isprint(c) ? c : ' ');
+    }
     printf("\"");
 
     // Disk id
-    for (int i=0; i < BAM_DISKINFO_LENGTH; i++)
-        printf( "%c", isprint(pet_asc[bam->diskinfo[i]]) ?
-                pet_asc[bam->diskinfo[i]] : ' ');
+    for (int i=0; i < BAM_DISKINFO_LENGTH; i++) {
+        uint8_t c = pet_asc[bam->diskinfo[i]];
+        printf("%c", isprint(c) ? c : ' ');
+    }
     printf("\n");
 
     // Files
@@ -173,16 +177,20 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
             dir_entry *de = (dir_entry*)(&ds->dentry[i]);
 
             if (de->filetype >= 0x80) {
-                for (int j=0; j < FILENAME_LENGTH; j++)
-                    printf( "%c", isprint(pet_asc[de->filename[j]]) ?
-                            pet_asc[de->filename[j]] : ' ');
+                for (int j=0; j < FILENAME_LENGTH; j++) {
+                    uint8_t c = pet_asc[de->filename[j]];
+                    printf( "%c", isprint(c) ? c : ' ');
+                }
 
                 size_t cur_file = 0;
                 if (strncmp(get_filetype(de->filetype), "prg", 3) == 0 ||
                     strncmp(get_filetype(de->filetype), "seq", 3) == 0) {
                     // Follow track/sector link to end of file
-                    track_sector fts =
-                          {.track = de->file.track, .sector = de->file.sector};
+                    track_sector fts = {
+                        .track = de->file.track,
+                        .sector = de->file.sector
+                    };
+
                     int cont = 1;
                     while (cont) {
                         uint8_t *fentry = (uint8_t*)&buffer[memory_offset(&fts)];

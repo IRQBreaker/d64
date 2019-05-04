@@ -32,6 +32,7 @@ typedef struct
             uint32_t reserved;
             uint8_t *data;
         } PACKED sidv2;
+
     } PACKED data;
 } PACKED sid_header;
 

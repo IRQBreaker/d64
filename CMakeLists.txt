@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(d64 C)
 
+set(name d64)
+
 if( NOT CMAKE_BUILD_TYPE )
     set( CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE )
 endif()
@@ -13,6 +15,15 @@ set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 
 include_directories(src)
 
-file(GLOB SOURCES "src/*.c")
+set(sources
+    src/basic.c
+    src/crt.c
+    src/disasm.c
+    src/disk.c
+    src/main.c
+    src/pxx.c
+    src/sid.c
+    src/t64.c
+    src/util.c)
 
-add_executable(d64 ${SOURCES})
+add_executable(${name} ${sources})

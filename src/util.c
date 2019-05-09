@@ -20,10 +20,10 @@ const uint8_t pet_asc[256] = {
     0xb0,0xb1,0xb2,0xb3,0xb4,0xb5,0xb6,0xb7,0xb8,0xb9,0xba,0xbb,0xbc,0xbd,0xbe,0xbf
 };
 
-const char *c64_file_type[] = {"del", "seq", "prg", "usr", "rel", "???"};
-
 const char *get_filetype(int ftype)
 {
+    char *c64_file_type[] = {"del", "seq", "prg", "usr", "rel", "???"};
+
     // Actual filetype is specfied by the last three bits
     int xtype = ftype & ((1 << 3) - 1);
     // Return "???" if unknown file type

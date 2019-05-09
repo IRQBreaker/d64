@@ -172,7 +172,7 @@ void disasm(const uint8_t *buffer, const int size, const uint16_t address, const
 
     if (address == UINT16_MAX) {
         // Get loading address and advance index
-        addr = buffer[0] + ((buffer[1] & 0xff) << 8);
+        addr = (uint16_t)(buffer[0] + ((buffer[1] & 0xff) << 8));
         index = 2;
     } else
         addr = address;

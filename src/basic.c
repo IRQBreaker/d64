@@ -36,7 +36,7 @@ const char *keywords[] = {
 void basic(const uint8_t *buffer, const int size)
 {
     // Get loading address and advance index
-    uint16_t address = buffer[0] + ((buffer[1] & 0xff) << 8);
+    uint16_t address = (uint16_t)(buffer[0] + ((buffer[1] & 0xff) << 8));
     int index = 2;
 
     do {
@@ -48,7 +48,7 @@ void basic(const uint8_t *buffer, const int size)
         if (low == 0 && high == low)
             break;
 
-        uint16_t next = (low + ((high & 0xff) << 8)) - address;
+        uint16_t next = (uint16_t)((low + ((high & 0xff) << 8)) - address);
         address += next;
 
         // input buffer overflow
@@ -58,7 +58,7 @@ void basic(const uint8_t *buffer, const int size)
         // line number
         low = buffer[index++];
         high = buffer[index++];
-        uint16_t line = low + ((high & 0xff) << 8);
+        uint16_t line = (uint16_t)(low + ((high & 0xff) << 8));
         printf("%u ", line);
 
         // current line

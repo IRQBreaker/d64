@@ -31,7 +31,7 @@ static void printhelp(char *program)
         "  -h          this help text\n", basename(program));
 }
 
-static filetype get_filetype(const uint8_t *buffer, const char *filename)
+static filetype get_ftype(const uint8_t *buffer, const char *filename)
 {
     int flen = strlen(filename);
 
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
     if (optforce)
         disasm(buffer, st.st_size, address, optillegal);
     else {
-        switch (get_filetype(buffer, argv[optind])) {
+        switch (get_ftype(buffer, argv[optind])) {
             case D64:
                 disk(buffer, st.st_size, optbam);
                 break;

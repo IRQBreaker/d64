@@ -86,7 +86,7 @@ const int sectors[] = {
 
 static int memory_offset(const track_sector *ts)
 {
-    return (ts->sector + sector_start[ts->track - 1]) * 256;
+    return (int)((ts->sector + sector_start[ts->track - 1]) * 256);
 }
 
 static int file_sector_size(const dir_entry *de)

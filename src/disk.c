@@ -30,6 +30,10 @@
 #define FILENAME_LENGTH           16
 #define GEOS_INFO_LENGTH          6
 
+#if 0
+#define SECTORS_35_TRACK          683
+#endif
+
 typedef struct
 {
     uint8_t track;
@@ -168,12 +172,23 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
     // Files
     ts.sector = 1;
     dir_sector *ds = (dir_sector*)(&buffer[memory_offset(&ts)]);
+    uint8_t ft = ds->dentry[0].next_dir_entry.track;
+    uint8_t fs = ds->dentry[0].next_dir_entry.sector;
     int free_sectors = 0;
     int valid = 1;
 
     while (valid) {
         for (int i=0; i < NO_OF_DIRENTRY_PER_SECTOR; i++) {
             free_sectors += bam->bam_entries[i].free_sectors;
+
+#if 0
+            // Sanity check for broken images
+            if (free_sectors > SECTORS_35_TRACK) {
+                valid = 0;
+                break;
+            }
+#endif
+
             dir_entry *de = (dir_entry*)(&ds->dentry[i]);
 
             if (de->filetype >= 0x80) {
@@ -202,6 +217,10 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
                             cont = 0;
                         } else
                             cur_file += 254;
+
+                        // Sanity check for broken images
+                        if (cur_file > SIZE_35_TRACK_ERROR)
+                            cont = 0;
                     }
                 }
 
@@ -212,9 +231,14 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
             }
         }
 
-        if (next_dir_ts(ds, &ts))
+        if (next_dir_ts(ds, &ts)) {
             ds = (dir_sector*)(&buffer[memory_offset(&ts)]);
-        else
+            // Sanity check for broken images
+            if (ft == ds->dentry[0].next_dir_entry.track &&
+                fs == ds->dentry[0].next_dir_entry.sector) {
+                valid = 0;
+            }
+        } else
             valid = 0;
     }
 

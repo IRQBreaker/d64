@@ -208,6 +208,10 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
 
                     int cont = 1;
                     while (cont) {
+                        if (memory_offset(&fts) > SIZE_35_TRACK_ERROR) {
+                            cont = 0;
+                            continue;
+                        }
                         uint8_t *fentry = (uint8_t*)&buffer[memory_offset(&fts)];
                         fts.track = fentry[0];
                         fts.sector = fentry[1];

@@ -29,10 +29,7 @@
 #define FILETYPE_REL              4
 #define FILENAME_LENGTH           16
 #define GEOS_INFO_LENGTH          6
-
-#if 0
 #define SECTORS_35_TRACK          683
-#endif
 
 typedef struct
 {
@@ -191,6 +188,11 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
 
             dir_entry *de = (dir_entry*)(&ds->dentry[i]);
 
+            if (file_sector_size(de) > SECTORS_35_TRACK) {
+                valid = 0;
+                break;
+            }
+
             if (de->filetype >= 0x80) {
                 for (int j=0; j < FILENAME_LENGTH; j++) {
                     uint8_t c = pet_asc[de->filename[j]];
@@ -200,6 +202,7 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
                 size_t cur_file = 0;
                 if (strncmp(get_filetype(de->filetype), "prg", 3) == 0 ||
                     strncmp(get_filetype(de->filetype), "seq", 3) == 0) {
+
                     // Follow track/sector link to end of file
                     track_sector fts = {
                         .track = de->file.track,
@@ -236,6 +239,11 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
         }
 
         if (next_dir_ts(ds, &ts)) {
+            // Sanity check for broken images
+            if (memory_offset(&ts) > SIZE_35_TRACK_ERROR) {
+                valid = 0;
+                break;
+            }
             ds = (dir_sector*)(&buffer[memory_offset(&ts)]);
             // Sanity check for broken images
             if (ft == ds->dentry[0].next_dir_entry.track &&

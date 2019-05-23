@@ -29,7 +29,10 @@
 #define FILETYPE_REL              4
 #define FILENAME_LENGTH           16
 #define GEOS_INFO_LENGTH          6
+
+#if 0
 #define SECTORS_35_TRACK          683
+#endif
 
 typedef struct
 {
@@ -188,7 +191,8 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
 
             dir_entry *de = (dir_entry*)(&ds->dentry[i]);
 
-            if (file_sector_size(de) > SECTORS_35_TRACK) {
+            // Sanity check for broken images
+            if (file_sector_size(de) > size) {
                 valid = 0;
                 break;
             }
@@ -211,7 +215,8 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
 
                     int cont = 1;
                     while (cont) {
-                        if (memory_offset(&fts) > SIZE_35_TRACK_ERROR) {
+                        // Sanity check for broken images
+                        if (memory_offset(&fts) > size) {
                             cont = 0;
                             continue;
                         }
@@ -240,12 +245,12 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
 
         if (next_dir_ts(ds, &ts)) {
             // Sanity check for broken images
-            if (memory_offset(&ts) > SIZE_35_TRACK_ERROR) {
+            if (memory_offset(&ts) > size) {
                 valid = 0;
                 break;
             }
             ds = (dir_sector*)(&buffer[memory_offset(&ts)]);
-            // Sanity check for broken images
+            // Check for broken directory
             if (ft == ds->dentry[0].next_dir_entry.track &&
                 fs == ds->dentry[0].next_dir_entry.sector) {
                 valid = 0;

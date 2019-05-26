@@ -247,7 +247,7 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
             // Sanity check for broken images
             if (memory_offset(&ts) > size) {
                 valid = 0;
-                break;
+                continue;
             }
             ds = (dir_sector*)(&buffer[memory_offset(&ts)]);
             // Check for broken directory

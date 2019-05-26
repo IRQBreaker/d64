@@ -203,6 +203,7 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
                     printf( "%c", isprint(c) ? c : ' ');
                 }
 
+                uint16_t loadaddress = 0;
                 size_t cur_file = 0;
                 if (strncmp(get_filetype(de->filetype), "prg", 3) == 0 ||
                     strncmp(get_filetype(de->filetype), "seq", 3) == 0) {
@@ -212,6 +213,14 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
                         .track = de->file.track,
                         .sector = de->file.sector
                     };
+
+                    if (memory_offset(&fts) > size) {
+                        continue;
+                    }
+
+                    if (strncmp(get_filetype(de->filetype), "prg", 3) == 0)
+                        loadaddress = (uint16_t)(buffer[memory_offset(&fts) + 2] +
+                            ((buffer[memory_offset(&fts) + 3] & 0xff) << 8));
 
                     int cont = 1;
                     while (cont) {
@@ -236,10 +245,11 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
                     }
                 }
 
-                printf("  %-3s (0x%02X), %3d sectors, %6ld bytes",
+                printf("  %-3s (0x%02X), %3d sectors, %6ld bytes, $%04X - $%04lX",
                         get_filetype(de->filetype), de->filetype,
-                        file_sector_size(de), cur_file);
-                printf(" (%02d,%02d)\n", de->file.track, de->file.sector);
+                        file_sector_size(de), cur_file,
+                        loadaddress, loadaddress + cur_file);
+                printf(", (%02d,%02d)\n", de->file.track, de->file.sector);
             }
         }
 

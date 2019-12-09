@@ -88,12 +88,12 @@ const int sectors[] = {
     17, 17, 17, 17, 17
 };
 
-static int memory_offset(const track_sector *ts)
+static inline int memory_offset(const track_sector *ts)
 {
     return (int)((ts->sector + sector_start[ts->track - 1]) * 256);
 }
 
-static int file_sector_size(const dir_entry *de)
+static inline int file_sector_size(const dir_entry *de)
 {
     return (int)(de->fs_sizel + ((de->fs_sizeh & 0xff) << 8));
 }
@@ -118,6 +118,75 @@ static int validate_disk(const int filesize)
     return 1;
 }
 
+static void show_bam(bam_block *bam)
+{
+    printf("BAM contents:\n");
+    for (int i=0; i < BAM_NO_OF_ENTRIES; i++) {
+        char bstring[25] = {0};
+
+        // . = free
+        // * = used
+        for (int j=0; j < 8; j++) {
+            bstring[j] =
+                ((bam->bam_entries[i].bitmap[0] >> j) & 0x01) ? '.' : '*';
+            bstring[j + 8] =
+                ((bam->bam_entries[i].bitmap[1] >> j) & 0x01) ? '.' : '*';
+            bstring[j + 16] =
+                ((bam->bam_entries[i].bitmap[2] >> j) & 0x01) ? '.' : '*';
+        }
+
+        printf("Track %02d: ", i + 1);
+        for (int k=0; k < sectors[i]; k++) {
+            printf("%c", bstring[k]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
+
+static void get_fileinfo(const uint8_t *buffer, dir_entry *de, const int size,
+        uint16_t *loadaddress, size_t *cur_file)
+{
+    if (strncmp(get_filetype(de->filetype), "prg", 3) == 0 ||
+            strncmp(get_filetype(de->filetype), "seq", 3) == 0) {
+
+        // Follow track/sector link to end of file
+        track_sector fts = {
+            .track = de->file.track,
+            .sector = de->file.sector
+        };
+
+        if (memory_offset(&fts) > size) {
+            return;
+        }
+
+        if (strncmp(get_filetype(de->filetype), "prg", 3) == 0)
+            *loadaddress = (uint16_t)(buffer[memory_offset(&fts) + 2] +
+                    ((buffer[memory_offset(&fts) + 3] & 0xff) << 8));
+
+        int cont = 1;
+        while (cont) {
+            // Sanity check for broken images
+            if (memory_offset(&fts) > size) {
+                return;
+            }
+            uint8_t *fentry = (uint8_t*)&buffer[memory_offset(&fts)];
+            fts.track = fentry[0];
+            fts.sector = fentry[1];
+
+            if (fts.track == 0) {
+                *cur_file += fts.sector;
+                cont = 0;
+            } else
+                *cur_file += 254;
+
+            // Sanity check for broken images
+            if (*cur_file > SIZE_35_TRACK_ERROR)
+                cont = 0;
+        }
+    }
+}
+
 void disk(const uint8_t *buffer, const int size, const int baminfo)
 {
     if (!validate_disk(size)) {
@@ -126,33 +195,10 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
     }
 
     track_sector ts = {.track = 18, .sector = 0};
-
     bam_block *bam = (bam_block*)(&buffer[memory_offset(&ts)]);
 
-    if (baminfo) {
-        printf("BAM contents:\n");
-        for (int i=0; i < BAM_NO_OF_ENTRIES; i++) {
-            char bstring[25] = {0};
-
-            // . = free
-            // * = used
-            for (int j=0; j < 8; j++) {
-                bstring[j] =
-                    ((bam->bam_entries[i].bitmap[0] >> j) & 0x01) ? '.' : '*';
-                bstring[j + 8] =
-                    ((bam->bam_entries[i].bitmap[1] >> j) & 0x01) ? '.' : '*';
-                bstring[j + 16] =
-                    ((bam->bam_entries[i].bitmap[2] >> j) & 0x01) ? '.' : '*';
-            }
-
-            printf("Track %02d: ", i + 1);
-            for (int k=0; k < sectors[i]; k++) {
-                printf("%c", bstring[k]);
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
+    if (baminfo)
+        show_bam(bam);
 
     // Disk name
     printf("\"");
@@ -180,7 +226,6 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
     while (valid) {
         for (int i=0; i < NO_OF_DIRENTRY_PER_SECTOR; i++) {
             free_sectors += bam->bam_entries[i].free_sectors;
-
 #if 0
             // Sanity check for broken images
             if (free_sectors > SECTORS_35_TRACK) {
@@ -188,7 +233,6 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
                 break;
             }
 #endif
-
             dir_entry *de = (dir_entry*)(&ds->dentry[i]);
 
             // Sanity check for broken images
@@ -205,45 +249,10 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
 
                 uint16_t loadaddress = 0;
                 size_t cur_file = 0;
+
                 if (strncmp(get_filetype(de->filetype), "prg", 3) == 0 ||
-                    strncmp(get_filetype(de->filetype), "seq", 3) == 0) {
-
-                    // Follow track/sector link to end of file
-                    track_sector fts = {
-                        .track = de->file.track,
-                        .sector = de->file.sector
-                    };
-
-                    if (memory_offset(&fts) > size) {
-                        continue;
-                    }
-
-                    if (strncmp(get_filetype(de->filetype), "prg", 3) == 0)
-                        loadaddress = (uint16_t)(buffer[memory_offset(&fts) + 2] +
-                            ((buffer[memory_offset(&fts) + 3] & 0xff) << 8));
-
-                    int cont = 1;
-                    while (cont) {
-                        // Sanity check for broken images
-                        if (memory_offset(&fts) > size) {
-                            cont = 0;
-                            continue;
-                        }
-                        uint8_t *fentry = (uint8_t*)&buffer[memory_offset(&fts)];
-                        fts.track = fentry[0];
-                        fts.sector = fentry[1];
-
-                        if (fts.track == 0) {
-                            cur_file += fts.sector;
-                            cont = 0;
-                        } else
-                            cur_file += 254;
-
-                        // Sanity check for broken images
-                        if (cur_file > SIZE_35_TRACK_ERROR)
-                            cont = 0;
-                    }
-                }
+                        strncmp(get_filetype(de->filetype), "seq", 3) == 0)
+                    get_fileinfo(buffer, de, size, &loadaddress, &cur_file);
 
                 printf("  %-3s (0x%02X), %3d sectors, %6ld bytes, $%04X - $%04lX",
                         get_filetype(de->filetype), de->filetype,
@@ -262,7 +271,7 @@ void disk(const uint8_t *buffer, const int size, const int baminfo)
             ds = (dir_sector*)(&buffer[memory_offset(&ts)]);
             // Check for broken directory
             if (ft == ds->dentry[0].next_dir_entry.track &&
-                fs == ds->dentry[0].next_dir_entry.sector) {
+                    fs == ds->dentry[0].next_dir_entry.sector) {
                 valid = 0;
             }
         } else

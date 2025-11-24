@@ -52,7 +52,7 @@ const mnemonics mne_legal[] = {
     {"bvc", RELATIVE},   {"eor", INDIRECT_Y}, {"???", IMPLIED},    {"???", IMPLIED},
     {"???", IMPLIED},    {"eor", ZEROPAGE_X}, {"lsr", ZEROPAGE_X}, {"???", IMPLIED},
     {"cli", IMPLIED},    {"eor", ABSOLUTE_Y}, {"???", IMPLIED},    {"???", IMPLIED},
-    {"???", IMPLIED},    {"eor", ABSOLUTE_X}, {"???", IMPLIED},    {"???", IMPLIED},
+    {"???", IMPLIED},    {"eor", ABSOLUTE_X}, {"lsr", ABSOLUTE_X}, {"???", IMPLIED},
     {"rts", IMPLIED},    {"adc", INDIRECT_X}, {"???", IMPLIED},    {"???", IMPLIED},
     {"???", IMPLIED},    {"adc", ZEROPAGE},   {"ror", ZEROPAGE},   {"???", IMPLIED},
     {"pla", IMPLIED},    {"adc", IMMEDIATE},  {"ror", IMPLIED},    {"???", IMPLIED},
@@ -135,7 +135,7 @@ const mnemonics mne_illegal[] = {
     {"sty", ABSOLUTE},   {"sta", ABSOLUTE},   {"stx", ABSOLUTE},   {"sax", ABSOLUTE},
     {"bcc", RELATIVE},   {"sta", INDIRECT_Y}, {"kil", IMPLIED},    {"ahx", INDIRECT_Y},
     {"sty", ZEROPAGE_X}, {"sta", ZEROPAGE_X}, {"stx", ZEROPAGE_Y}, {"sax", ZEROPAGE_Y},
-    {"tya", IMPLIED},    {"sta", ABSOLUTE_Y}, {"txs", IMPLIED},    {"tas", IMPLIED},
+    {"tya", IMPLIED},    {"sta", ABSOLUTE_Y}, {"txs", IMPLIED},    {"tas", ABSOLUTE_Y},
     {"shy", ABSOLUTE_X}, {"sta", ABSOLUTE_X}, {"shx", ABSOLUTE_Y}, {"ahx", ABSOLUTE_Y},
     {"ldy", IMMEDIATE},  {"lda", INDIRECT_X}, {"ldx", IMMEDIATE},  {"lax", INDIRECT_X},
     {"ldy", ZEROPAGE},   {"lda", ZEROPAGE},   {"ldx", ZEROPAGE},   {"lax", ZEROPAGE},
@@ -205,42 +205,42 @@ void disasm(const uint8_t *buffer, const int size, const uint16_t address, const
         addr += op_length[mne[opcode].type];
 
         // mnemonic
-        printf("%s ", mne[opcode].mnemonic);
+        printf("%s", mne[opcode].mnemonic);
 
         // Type
         switch (mne[opcode].type) {
             case IMMEDIATE:
-                printf("#$%02x", low);
+                printf(" #$%02x", low);
                 break;
             case ABSOLUTE:
-                printf("$%02x%02x", high, low);
+                printf(" $%02x%02x", high, low);
                 break;
             case ABSOLUTE_X:
-                printf("$%02x%02x,x", high, low);
+                printf(" $%02x%02x,x", high, low);
                 break;
             case ABSOLUTE_Y:
-                printf("$%02x%02x,y", high, low);
+                printf(" $%02x%02x,y", high, low);
                 break;
             case ZEROPAGE:
-                printf("$%02x", low);
+                printf(" $%02x", low);
                 break;
             case INDIRECT_X:
-                printf("($%02x,x)", low);
+                printf(" ($%02x,x)", low);
                 break;
             case INDIRECT_Y:
-                printf("($%02x),y", low);
+                printf(" ($%02x),y", low);
                 break;
             case ZEROPAGE_X:
-                printf("$%02x,x", low);
+                printf(" $%02x,x", low);
                 break;
             case ZEROPAGE_Y:
-                printf("$%02x,y", low);
+                printf(" $%02x,y", low);
                 break;
             case INDIRECT:
-                printf("($%02x%02x)", high, low);
+                printf(" ($%02x%02x)", high, low);
                 break;
             case RELATIVE:
-                printf("$%04x", (low <= 127) ? addr + low : addr - (256 - low));
+                printf(" $%04x", (low <= 127) ? addr + low : addr - (256 - low));
                 break;
             default:
                 /* IMPLIED */

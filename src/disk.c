@@ -599,28 +599,31 @@ static int list_directory(const uint8_t *bam, int show_sizes)
             int off = i * DIR_ENTRY_SIZE;
             uint8_t file_type = sec[off + DIR_FILETYPE_OFF];
 
-            if (file_type == 0x00) {
-                continue;
-            }
-
             char name[DIR_FILENAME_LEN + 1];
             petscii_dirname_16(&sec[off + DIR_FILENAME_OFF], name);
 
-            // Entries consisting of only spaces can be skipped
-            int all_blank = 1;
+            // Determine if this directory slot is entirely unused (empty),
+            // which we still want to skip. We now keep DEL entries too, so
+            // we only skip when everything relevant is empty.
+            int start_track = sec[off + DIR_START_TRACK_OFF];
+            int start_sector = sec[off + DIR_START_SECTOR_OFF];
+            int blocks = sec[off + DIR_FILESIZE_LO_OFF] + (sec[off + DIR_FILESIZE_HI_OFF] << 8);
+
+            int name_all_pad_or_zero = 1;
 
             for (int k = 0; k < DIR_FILENAME_LEN; ++k) {
-                if (name[k] != ' ') {
-                    all_blank = 0;
+                uint8_t c = sec[off + DIR_FILENAME_OFF + k];
+
+                if (c != PETSCII_PAD && c != 0x00) {
+                    name_all_pad_or_zero = 0;
                     break;
                 }
             }
 
-            if (all_blank) {
+            if (file_type == 0x00 && start_track == 0 && start_sector == 0 && blocks == 0 && name_all_pad_or_zero) {
+                // Truly empty slot
                 continue;
             }
-
-            int blocks = sec[off + DIR_FILESIZE_LO_OFF] + (sec[off + DIR_FILESIZE_HI_OFF] << 8);
 
             const char *type_base = "???";
 

@@ -1,4 +1,5 @@
 #include "disk.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <stdint.h>
@@ -324,16 +325,24 @@ static void petscii_to_ascii_trim(const uint8_t *in, size_t len, char *out, size
 
     for (size_t i = 0; i < len && j + 1 < outsz; ++i) {
         uint8_t c = in[i];
+        uint8_t a = pet_asc[c];
 
+        // Normalize PETSCII pad to ASCII space
         if (c == PETSCII_PAD) {
-            c = ASCII_SPACE;
+            a = ASCII_SPACE;
         }
 
-        if (c < ASCII_MIN_PRINTABLE) {
-            c = '?';
+        // Ensure printable ASCII; otherwise fallback placeholder
+        if (a < ASCII_MIN_PRINTABLE || a > 0x7E) {
+            a = '?';
         }
 
-        out[j++] = (char)c;
+        // Lowercase ASCII letters for stylistic consistency in header/disk name
+        if (a >= 'A' && a <= 'Z') {
+            a = (uint8_t)(a - 'A' + 'a');
+        }
+
+        out[j++] = (char)a;
     }
 
     while (j > 0 && out[j-1] == ' ') {
@@ -356,98 +365,137 @@ static void petscii_dirname_16(const uint8_t *in, char *out /* size >= 17 */)
 
         if (c == PETSCII_PAD) {
             o = ' ';
-        } else if (c >= 0x20 && c <= 0x7E) {
-            // ASCII printable. Lowercase letters to match desired style.
-            if (c >= 'A' && c <= 'Z') {
-                o = (char)(c - 'A' + 'a');
-            } else {
-                o = (char)c;
-            }
         } else {
-            // Graphics and special PETSCII seen in directory art.
-            switch (c) {
-                // Dots / background
-                case 0xAD:
-                case 0xAE:
-                case 0xAF:
-                case 0xB0:
-                case 0xB1:
-                case 0xB2:
-                case 0xB3:
-                case 0xBD:
-                case 0xC0:
-                case 0xDB:
-                    o = '.'; break;
+            // First try generic PETSCII->ASCII mapping used across the repo
+            uint8_t a = pet_asc[c];
 
-                // Block / border
-                case 0xC2:
-                    o = 'B';
-                    break;  // solid block
+            if (a >= 0x20 && a <= 0x7E) {
+                o = (char)a;
 
-                // Corners/edges and markers
-                case 0xD4:
-                    o = 'T';
-                    break;  // top
+                if (o == '`') {
+                    o = '.'; // prefer dot over backtick in art
+                }
+            } else if (a >= 0xC1 && a <= 0xDA) {
+                // pet_asc mapped to PETSCII graphics letters; convert to ASCII A..Z
+                o = (char)('A' + (a - 0xC1));
+            } else {
+                // Graphics and special PETSCII seen in directory art.
+                switch (c) {
+                    // Dots / background
+                    case 0xAD:
+                    case 0xAE:
+                    case 0xAF:
+                    case 0xB0:
+                    case 0xB1:
+                    case 0xB2:
+                    case 0xB3:
+                    case 0xBD:
+                    case 0xC0:
+                    case 0xDB:
+                        o = '.'; break;
 
-                case 0xD9:
-                    o = 'Y';
-                    break;  // top-right/right marker
+                    // Block / border
+                    case 0xC2:
+                        o = 'B';
+                        break;  // solid block
 
-                case 0xCA:
-                    o = 'J';
-                    break;  // bottom-left
+                    // Map PETSCII graphic letter block range to ASCII letters
+                    case 0xC1:
+                        o = 'A';
+                        break;
+                    case 0xC3:
+                        o = 'C';
+                        break;
+                    case 0xC5:
+                        o = 'E';
+                        break;
+                    case 0xCC:
+                        o = 'L';
+                        break;
+                    case 0xD0:
+                        o = 'P';
+                        break;
+                    case 0xD1:
+                        o = 'Q';
+                        break;
+                    case 0xD2:
+                        o = 'R';
+                        break;
+                    case 0xD7:
+                        o = 'W';
+                        break;
+                    case 0xD8:
+                        o = 'X';
+                        break;
+                    case 0xDA:
+                        o = 'Z';
+                        break;
 
-                case 0xCB:
-                    o = 'K';
-                    break;  // bottom-right
+                    // Corners/edges and markers
+                    case 0xD4:
+                        o = 'T';
+                        break;  // top
 
-                case 0xD5:
-                    o = 'U';
-                    break;  // up
+                    case 0xD9:
+                        o = 'Y';
+                        break;  // top-right/right marker
 
-                case 0xC4:
-                    o = 'D';
-                    break;  // horizontal line
+                    case 0xCA:
+                        o = 'J';
+                        break;  // bottom-left
 
-                case 0xC9:
-                    o = 'I';
-                    break;  // right marker
+                    case 0xCB:
+                        o = 'K';
+                        break;  // bottom-right
 
-                case 0xC6:
-                    o = 'F';
-                    break;
+                    case 0xD5:
+                        o = 'U';
+                        break;  // up
 
-                case 0xC7:
-                    o = 'G';
-                    break;
+                    case 0xC4:
+                        o = 'D';
+                        break;  // horizontal line
 
-                case 0xC8:
-                    o = 'H';
-                    break;
+                    case 0xC9:
+                        o = 'I';
+                        break;  // right marker
 
-                case 0xCF:
-                    o = 'O';
-                    break;
+                    case 0xC6:
+                        o = 'F';
+                        break;
 
-                case 0xD3:
-                    o = 'S';
-                    break;
+                    case 0xC7:
+                        o = 'G';
+                        break;
 
-                case 0xCD:
-                    o = 'M';
-                    break;
+                    case 0xC8:
+                        o = 'H';
+                        break;
 
-                case 0xCE:
-                    o = 'N';
-                    break;
+                    case 0xCF:
+                        o = 'O';
+                        break;
 
-                case 0xD6:
-                    o = 'V';
-                    break;
+                    case 0xD3:
+                        o = 'S';
+                        break;
 
-                default:
-                    o = '.'; // fall back to dot for other graphics
-                    break;
+                    case 0xCD:
+                        o = 'M';
+                        break;
+
+                    case 0xCE:
+                        o = 'N';
+                        break;
+
+                    case 0xD6:
+                        o = 'V';
+                        break;
+
+                    default:
+                        o = '.'; // fall back to dot for other graphics
+                        break;
+                }
             }
         }
 
@@ -460,28 +508,43 @@ static void petscii_dirname_16(const uint8_t *in, char *out /* size >= 17 */)
 static void print_header_from_bam(const uint8_t *bam)
 {
     char disk_name[BAM_DISK_NAME_LEN + 1];
-    char id_ver_type[DISK_ID_LEN + DOS_TYPE_LEN + 1 + 1];
+    char id_str[DISK_ID_LEN + 1];
+    char type_str[DOS_TYPE_LEN + 1];
+    char ver_char = 0;
 
     petscii_to_ascii_trim(&bam[BAM_DISK_NAME_OFF], BAM_DISK_NAME_LEN, disk_name, sizeof(disk_name));
 
-    // Compose id + version + type (e.g., "rules") all lowercased, no spaces
+    // Extract ID (2 bytes) and DOS type (2 bytes), lowercased
     uint8_t id0 = bam[BAM_DISK_ID_OFF + 0];
     uint8_t id1 = bam[BAM_DISK_ID_OFF + 1];
     uint8_t ver = bam[BAM_DOS_TYPE_OFF - 1];
     uint8_t dt0 = bam[BAM_DOS_TYPE_OFF + 0];
     uint8_t dt1 = bam[BAM_DOS_TYPE_OFF + 1];
 
-    id_ver_type[0] = (char)id0;
-    id_ver_type[1] = (char)id1;
-    id_ver_type[2] = (char)ver;
-    id_ver_type[3] = (char)dt0;
-    id_ver_type[4] = (char)dt1;
-    id_ver_type[5] = '\0';
+    id_str[0] = (char)id0;
+    id_str[1] = (char)id1;
+    id_str[2] = '\0';
 
-    for (char *p = id_ver_type; *p; ++p) {
+    type_str[0] = (char)dt0;
+    type_str[1] = (char)dt1;
+    type_str[2] = '\0';
+
+    for (char *p = id_str; *p; ++p) {
         if (*p >= 'A' && *p <= 'Z') {
             *p = (char)(*p - 'A' + 'a');
         }
+    }
+
+    for (char *p = type_str; *p; ++p) {
+        if (*p >= 'A' && *p <= 'Z') {
+            *p = (char)(*p - 'A' + 'a');
+        }
+    }
+
+    // Lowercase version if included
+    ver_char = (char)ver;
+    if (ver_char >= 'A' && ver_char <= 'Z') {
+        ver_char = (char)(ver_char - 'A' + 'a');
     }
 
     char padded_name[BAM_DISK_NAME_LEN + 1];
@@ -502,7 +565,17 @@ static void print_header_from_bam(const uint8_t *bam)
 
     padded_name[BAM_DISK_NAME_LEN] = '\0';
 
-    printf("0 \"%s\" %s\n", padded_name, id_ver_type);
+    // Decide whether to include the DOS version char between ID and TYPE.
+    // Include when it's meaningful (not pad or plain 'a'/'A').
+    int include_ver = (ver_char != 0) && (ver_char != (char)PETSCII_PAD) && (ver_char != ' ') && (ver_char != 'a');
+
+    if (include_ver) {
+        // Print as: 0 "<name>" <id><ver><type>
+        printf("0 \"%s\" %s%c%s\n", padded_name, id_str, ver_char, type_str);
+    } else {
+        // Print as: 0 "<name>" <id> <type>
+        printf("0 \"%s\" %s %s\n", padded_name, id_str, type_str);
+    }
 }
 
 static int list_directory(const uint8_t *bam, int show_sizes)
@@ -594,7 +667,60 @@ static int list_directory(const uint8_t *bam, int show_sizes)
 
             type_marked[ti] = '\0';
 
-            printf("%-5d\"%s\" ", blocks, name);
+            // For art/graphics lines (commonly have 0 blocks), keep full 16 chars
+            // and preserve trailing spaces inside the quotes.
+            if (blocks == 0) {
+                // Art rows: choose case based on original PETSCII bytes to
+                // emulate C64 upper/graphics set appearance:
+                // - raw 'a'..'z' -> display as uppercase
+                // - raw 'A'..'Z' -> display as lowercase
+                // - other raw codes -> keep mapped glyphs (often uppercase placeholders)
+                for (int li = 0; li < DIR_FILENAME_LEN; ++li) {
+                    uint8_t raw = sec[off + DIR_FILENAME_OFF + li];
+                    unsigned char mapped = (unsigned char)name[li];
+
+                    if (raw >= 'a' && raw <= 'z') {
+                        if (mapped >= 'a' && mapped <= 'z') {
+                            name[li] = (char)(mapped - 'a' + 'A');
+                        }
+                    } else if (raw >= 'A' && raw <= 'Z') {
+                        if (mapped >= 'A' && mapped <= 'Z') {
+                            name[li] = (char)(mapped - 'A' + 'a');
+                        }
+                    }
+                }
+
+                printf("%-5d\"%.*s\" ", blocks, DIR_FILENAME_LEN, name);
+            } else {
+                // Trim trailing spaces inside the quotes for regular entries
+                int name_len = DIR_FILENAME_LEN;
+
+                while (name_len > 0 && name[name_len - 1] == ' ') {
+                    name_len--;
+                }
+
+                // Lowercase ASCII letters for regular filenames for stylistic consistency
+                for (int li = 0; li < name_len; ++li) {
+                    if (name[li] >= 'A' && name[li] <= 'Z') {
+                        name[li] = (char)(name[li] - 'A' + 'a');
+                    }
+                }
+
+                // Print blocks, then quoted trimmed name
+                printf("%-5d\"%.*s\"", blocks, name_len, name);
+
+                // Pad spacing so file type aligns after the closing quote
+                // Target width (including quotes) for name column
+                const int name_field_width = 18; // 16 chars + 2 quotes
+                int printed_name_width = name_len + 2;
+
+                int pad = name_field_width - printed_name_width;
+                if (pad < 1) {
+                    pad = 1;
+                }
+
+                printf("%*s", pad, "");
+            }
 
             printf("%s", type_marked);
 
@@ -641,7 +767,9 @@ static int compute_free_blocks(const uint8_t *bam, int total_file_blocks)
 
     for (int t = 1; t <= g_total_tracks; ++t) {
         int free = 0;
-        uint8_t b1 = 0, b2 = 0, b3 = 0;
+        uint8_t b1 = 0;
+        uint8_t b2 = 0;
+        uint8_t b3 = 0;
 
         if (get_bam_entry(bam, t, &free, &b1, &b2, &b3)) {
             // Use the per-track free count reported in BAM
@@ -649,6 +777,7 @@ static int compute_free_blocks(const uint8_t *bam, int total_file_blocks)
         } else {
             // Fallback: bit-count if BAM entry unavailable
             int spt = sectors_per_track(t);
+
             for (int s = 0; s < spt; ++s) {
                 uint8_t bb = (s < BITS_PER_BYTE) ? b1 : (s < 2 * BITS_PER_BYTE) ? b2 : b3;
 
